@@ -62,10 +62,12 @@ button{font:inherit;font-weight:700;font-size:16px;color:var(--fg);background:va
 button:active{transform:scale(.97)}
 button:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
 button:disabled{opacity:.45;cursor:default}
-button.main{background:linear-gradient(180deg,#5ff3ff,#22b8e6);color:#07142a;border:0;box-shadow:0 0 18px rgba(86,240,255,.35)}
+button.main,a.btn.main{background:linear-gradient(180deg,#5ff3ff,#22b8e6);color:#07142a;border:0;box-shadow:0 0 18px rgba(86,240,255,.35)}
 button.hot{background:linear-gradient(180deg,#ff5aa3,#e0186e);color:#fff;border:0;box-shadow:0 0 18px rgba(255,46,136,.35)}
 button.ghost{background:transparent}
 button.small{padding:8px 11px;font-size:13px;border-radius:9px}
+a.btn{display:block;text-align:center;text-decoration:none;font-weight:700;font-size:16px;border-radius:12px;padding:13px 14px}
+a.btn:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
 .big{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:15px 16px}
 .big small{font-weight:400;font-size:13px;opacity:.75}
 .seg{display:flex;gap:6px}
@@ -127,6 +129,14 @@ button.small{padding:8px 11px;font-size:13px;border-radius:9px}
     <div class="card">
       <h3>Entrar numa sala</h3>
       <div class="row"><input class="code grow" id="inCode" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters" inputmode="text"><button id="btJoin" class="main">Entrar</button></div>
+    </div>
+    <div class="card" id="appCard" hidden>
+      <h3>Instalar o app</h3>
+      <div id="appAndroid" class="col" style="display:flex;flex-direction:column;gap:10px">
+        <a class="btn main" id="apkLink" href="fuga-neon.apk" download="fuga-neon.apk">Baixar para Android (APK)</a>
+        <p class="note">Depois de baixar, toque no arquivo para instalar. Se o Android avisar, toque em <b>Configurações</b> e permita instalar apps desta fonte. Pode aparecer um alerta do Play Protect porque o app não vem da Play Store: toque em <b>Instalar mesmo assim</b>.</p>
+      </div>
+      <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
     <div class="card">
       <h3>Como jogar</h3>
@@ -1182,7 +1192,8 @@ $('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; sto
 $('#btSoloMenu').addEventListener('click', () => toMenu());
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
 $('#btQuit').addEventListener('click', () => toMenu());
-function inviteLink(){ return location.origin + location.pathname + '?sala=' + game.code; }
+const PUBLIC_URL = 'https://fuga-neon.vercel.app/';
+function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
 $('#btCopy').addEventListener('click', () => {
   const txt = 'Bora jogar Fuga Neon! Código da sala: ' + game.code + ' — ' + inviteLink();
   navigator.clipboard?.writeText(txt).then(() => toast('Convite copiado. Cole no WhatsApp.'), () => toast('Código: ' + game.code));
@@ -1195,6 +1206,19 @@ $('#btShare').addEventListener('click', () => {
 // abrir pelo link de convite
 const qs = new URLSearchParams(location.search).get('sala');
 if (qs){ $('#inCode').value = clean(qs, 4).toUpperCase(); setTimeout(() => { $('#inName').focus(); toast('Digite seu nome e toque em Entrar.'); }, 300); }
+
+// botão voltar do celular (app Android): devolve true quando o jogo tratou
+window.__fneonBack = () => {
+  const vis = SCREENS.find(s => !$('#' + s).hidden);
+  if (game.phase === 'play' && !vis){ openPause(); return true; }
+  if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
+  if (vis === 'scrSolo'){ show('scrMenu'); refreshMenu(); return true; }
+  if (vis && vis !== 'scrMenu'){ toMenu(); return true; }
+  return false;
+};
+const IN_APP = /FugaNeonApp/.test(navigator.userAgent);
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (!IN_APP){ $('#appCard').hidden = false; $('#appAndroid').hidden = IS_IOS; $('#appIos').hidden = !IS_IOS; }
 
 resize(); refreshMenu(); show('scrMenu');
 requestAnimationFrame(frame);
