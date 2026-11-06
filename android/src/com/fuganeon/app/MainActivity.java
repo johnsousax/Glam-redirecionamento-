@@ -18,7 +18,8 @@ import android.webkit.WebViewClient;
  * cai para a cópia que vem dentro do app (modos sozinho e 2 no mesmo celular).
  */
 public class MainActivity extends Activity {
-    static final String REMOTE = "https://fuga-neon.vercel.app/";
+    static final String REMOTE = "https://pixelfuga.vercel.app/";
+    static final String OLD_REMOTE = "https://fuga-neon.vercel.app/"; // endereço antigo, continua aceito
     static final String LOCAL = "file:///android_asset/index.html";
     private WebView web;
     private boolean usingLocal = false;
@@ -47,7 +48,7 @@ public class MainActivity extends Activity {
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, String url) {
-                if (url.startsWith("file:") || url.startsWith(REMOTE)) return false;
+                if (url.startsWith("file:") || url.startsWith(REMOTE) || url.startsWith(OLD_REMOTE)) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) { }
                 return true;
             }

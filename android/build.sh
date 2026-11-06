@@ -5,8 +5,8 @@
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-2}
-VERSION_NAME=${VERSION_NAME:-1.1}
+VERSION_CODE=${VERSION_CODE:-3}
+VERSION_NAME=${VERSION_NAME:-1.2}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
 KS_PASS=${KS_PASS:-fuganeon}
 M=https://repo1.maven.org/maven2

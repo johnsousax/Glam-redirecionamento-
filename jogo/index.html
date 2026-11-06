@@ -142,7 +142,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
-    <p class="ver">v1.1 · 50 fases · 7 perigos</p>
+    <p class="ver">v1.2 · 50 fases · 7 perigos</p>
   </div>
 </section>
 
@@ -1427,7 +1427,7 @@ $('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; sto
 $('#btSoloMenu').addEventListener('click', () => toMenu());
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
 $('#btQuit').addEventListener('click', () => toMenu());
-const PUBLIC_URL = 'https://fuga-neon.vercel.app/';
+const PUBLIC_URL = 'https://pixelfuga.vercel.app/';
 function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
 $('#btCopy').addEventListener('click', () => {
   const txt = 'Bora jogar Pixel Fuga! Código da sala: ' + game.code + ' — ' + inviteLink();
