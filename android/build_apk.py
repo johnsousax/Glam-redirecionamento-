@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Monta o APK do Fuga Neon sem o Android SDK.
+"""Monta o APK do Pixel Fuga sem o Android SDK.
 
 Escreve o AndroidManifest.xml binário (AXML), um resources.arsc com o ícone e
 um zip alinhado. A compilação Java (javac + dx) e a assinatura (apksig) ficam
@@ -13,7 +13,7 @@ import zlib
 from pathlib import Path
 
 PACKAGE = 'com.fuganeon.app'
-LABEL = 'Fuga Neon'
+LABEL = 'Pixel Fuga'
 MIN_SDK, TARGET_SDK = 24, 34
 ANDROID_NS = 'http://schemas.android.com/apk/res/android'
 ICON_ID = 0x7F010000  # pacote 7f, tipo 1 (drawable), entrada 0

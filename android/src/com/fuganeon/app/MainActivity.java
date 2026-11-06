@@ -14,7 +14,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 /**
- * Fuga Neon: abre o jogo publicado (sempre a versão mais nova) e, sem internet,
+ * Pixel Fuga: abre o jogo publicado (sempre a versão mais nova) e, sem internet,
  * cai para a cópia que vem dentro do app (modos sozinho e 2 no mesmo celular).
  */
 public class MainActivity extends Activity {

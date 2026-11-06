@@ -5,8 +5,8 @@
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-1}
-VERSION_NAME=${VERSION_NAME:-1.0}
+VERSION_CODE=${VERSION_CODE:-2}
+VERSION_NAME=${VERSION_NAME:-1.1}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
 KS_PASS=${KS_PASS:-fuganeon}
 M=https://repo1.maven.org/maven2
@@ -31,5 +31,5 @@ if [ ! -f "$KEYSTORE" ]; then
     -validity 10000 -dname "CN=Fuga Neon, O=Fuga Neon, C=BR" >/dev/null 2>&1
 fi
 javac -nowarn -cp tools/apksig.jar -d build/signer tools/Sign.java
-java --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.pkcs=ALL-UNNAMED --add-exports java.base/sun.security.util=ALL-UNNAMED -cp tools/apksig.jar:build/signer Sign "$KEYSTORE" "$KS_PASS" fuganeon build/unsigned.apk ../jogo/fuga-neon.apk
-ls -la ../jogo/fuga-neon.apk
+java --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.pkcs=ALL-UNNAMED --add-exports java.base/sun.security.util=ALL-UNNAMED -cp tools/apksig.jar:build/signer Sign "$KEYSTORE" "$KS_PASS" fuganeon build/unsigned.apk ../jogo/pixel-fuga.apk
+ls -la ../jogo/pixel-fuga.apk
