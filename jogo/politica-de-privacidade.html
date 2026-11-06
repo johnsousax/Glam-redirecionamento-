@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1a">
+<title>Política de privacidade · Pixel Fuga</title>
+<meta name="description" content="Como o Pixel Fuga trata seus dados: sem cadastro, sem anúncios e sem rastreamento.">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+:root{--ink:#0d0b1a;--night:#1b1838;--violet:#4b3f8f;--cream:#f4f1de;--muted:#a9a3cf;--gold:#ffd23f;--pink:#ff77a8;--red:#e8435a;
+  --pixel:'Press Start 2P','Courier New',monospace;--body:'VT323','Courier New',monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);font-size:22px;line-height:1.25}
+body{background-image:linear-gradient(rgba(75,63,143,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(75,63,143,.18) 2px,transparent 2px);background-size:32px 32px}
+main{max-width:680px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(32px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+h1{font-family:var(--pixel);font-weight:400;font-size:clamp(18px,5vw,24px);line-height:1.5;color:var(--gold);text-shadow:3px 3px 0 var(--red);margin:8px 0 6px;text-wrap:balance}
+h2{font-family:var(--pixel);font-weight:400;font-size:12px;line-height:1.6;color:var(--gold);text-transform:uppercase;margin:0 0 10px}
+.date{color:var(--muted);margin:0 0 20px}
+section{background:var(--night);border:3px solid var(--violet);box-shadow:5px 5px 0 #000;padding:16px;margin:0 0 18px}
+p,li{margin:0 0 10px}
+ul{padding-left:22px;margin:0 0 10px}
+b{font-weight:400;color:#fff}
+a{color:var(--pink)}
+a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.back{display:inline-block;font-family:var(--pixel);font-size:12px;line-height:1.5;text-transform:uppercase;text-decoration:none;color:var(--ink);background:var(--gold);border:3px solid #000;box-shadow:4px 4px 0 #000;padding:12px 14px}
+.back:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
+.by{display:block;text-align:center;font-family:var(--pixel);font-size:11px;line-height:1.6;color:var(--pink);text-decoration:none;padding:12px}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">‹ Voltar ao jogo</a>
+  <h1>Política de privacidade</h1>
+  <p class="date">Pixel Fuga · atualizada em 6 de novembro de 2026</p>
+
+  <section>
+    <h2>Resumo</h2>
+    <p>O Pixel Fuga <b>não tem cadastro, não mostra anúncios e não usa rastreamento</b>. Seu apelido e seu progresso ficam guardados só no seu aparelho.</p>
+  </section>
+
+  <section>
+    <h2>O que fica no seu aparelho</h2>
+    <p>O apelido que você digita, as fases liberadas e a última fase jogada ficam no armazenamento do navegador ou do app. Essas informações não são enviadas para nenhum servidor do jogo — o jogo não tem servidor de dados.</p>
+  </section>
+
+  <section>
+    <h2>Modo online (salas)</h2>
+    <p>Para conectar os celulares, o jogo usa uma conexão direta entre os aparelhos (WebRTC), com a ajuda do serviço público <b>PeerJS</b>: o servidor de salas (0.peerjs.com) e, quando a rede exige, servidores de retransmissão do PeerJS.</p>
+    <ul>
+      <li>Nessa conexão, o <b>endereço IP</b> do seu aparelho é visto por esses servidores e pelos outros jogadores da sala.</li>
+      <li>Durante a partida, os jogadores da mesma sala recebem seu <b>apelido</b>, sua <b>posição no labirinto</b>, seus <b>resultados</b> e o <b>texto da aposta</b>, se alguém propuser uma.</li>
+      <li>O jogo não guarda nada disso depois que a sala fecha.</li>
+    </ul>
+    <p>Só entra na sala quem tem o código de 4 letras, e quem criou a sala pode tirar qualquer pessoa antes de a partida começar.</p>
+  </section>
+
+  <section>
+    <h2>Serviços de terceiros</h2>
+    <ul>
+      <li><b>Vercel</b> — hospeda o site e registra dados técnicos de acesso (como IP e tipo de navegador) para operar e proteger o serviço.</li>
+      <li><b>Google Fonts</b> — fornece as fontes do jogo; o Google recebe o IP do aparelho ao baixar as fontes.</li>
+      <li><b>PeerJS</b> — conecta os celulares no modo online, como descrito acima.</li>
+    </ul>
+    <p>Cada serviço segue a própria política de privacidade.</p>
+  </section>
+
+  <section>
+    <h2>Crianças e adolescentes</h2>
+    <p>O jogo não pede dados pessoais. No modo online, os outros jogadores da sala só veem o apelido e o texto da aposta. Recomendamos que pais e responsáveis acompanhem o uso do modo online por crianças e adolescentes.</p>
+  </section>
+
+  <section>
+    <h2>Seus direitos (LGPD)</h2>
+    <p>Você apaga tudo a qualquer momento limpando os dados do site no navegador ou desinstalando o app. Como o jogo não guarda seus dados em servidores próprios, não existe cadastro para consultar, corrigir ou excluir.</p>
+    <p>Se o jogo passar a usar anúncios, compras ou outros serviços, esta página será atualizada antes da mudança.</p>
+    <p>Dúvidas: fale com o criador do jogo pelo Instagram <a href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">@jonsousax</a>.</p>
+  </section>
+
+  <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
+</main>
+<script>
+// botão voltar do app Android: volta para o jogo em vez de fechar o app
+window.__fneonBack = function(){ if (history.length > 1) history.back(); else location.href = './'; return true; };
+</script>
+</body>
+</html>

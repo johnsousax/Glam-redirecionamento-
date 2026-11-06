@@ -9,6 +9,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pixel Fuga">
 <title>Pixel Fuga</title>
+<meta name="description" content="Labirinto em pixel art: deslize, desvie dos perigos e ache a porta dourada. Jogue sozinho, a 2 no mesmo celular ou numa sala online com até 6 amigos.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pixel Fuga">
+<meta property="og:title" content="Pixel Fuga — fuja do labirinto antes dos seus amigos">
+<meta property="og:description" content="50 fases, 7 perigos e salas online com até 6 pessoas. Abra o link, digite o código e jogue.">
+<meta property="og:image" content="https://pixelfuga.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://pixelfuga.vercel.app/">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
@@ -129,6 +143,10 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
 .by{display:block;text-align:center;font-family:var(--pixel);font-size:11px;line-height:1.6;color:var(--pink);text-decoration:none;padding:8px}
 .by:hover,.by:focus-visible{color:#fff;outline:none;text-decoration:underline}
 .ver{text-align:center;color:var(--violet);font-size:18px}
+.sub{display:block;text-align:center;font-size:19px;color:var(--muted);text-decoration:underline;padding:6px}
+.sub:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.pl .kick{padding:6px 7px;font-size:8px;box-shadow:2px 2px 0 #000;flex:none}
+.pl .kick.sure{background:var(--red);color:var(--cream)}
 @media (prefers-reduced-motion:reduce){.press{animation:none}button:active,a.btn:active{transform:none}}
 </style>
 </head>
@@ -142,7 +160,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
-    <p class="ver">v1.2 · 50 fases · 7 perigos</p>
+    <p class="ver">v1.3 · 50 fases · 7 perigos</p>
   </div>
 </section>
 
@@ -161,10 +179,11 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
     <div class="card" id="appCard" hidden>
       <h3>Instalar o app</h3>
       <div id="appAndroid" style="display:flex;flex-direction:column;gap:12px">
-        <a class="btn main" id="apkLink" href="pixel-fuga.apk" download="pixel-fuga.apk">Baixar para Android</a>
-        <p class="note">Depois de baixar, toque no arquivo para instalar. Se o Android avisar, toque em <b>Configurações</b> e permita instalar apps desta fonte. Se aparecer o alerta do Play Protect, toque em <b>Instalar mesmo assim</b>.</p>
+        <button class="main" id="btInstall" hidden>Instalar na tela inicial</button>
+        <p class="note" id="installHelp">No Chrome, toque no menu <b>⋮</b> e depois em <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>). O jogo abre em tela cheia e o modo sozinho funciona sem internet.</p>
+        <a class="sub" id="apkLink" href="pixel-fuga.apk" download="pixel-fuga.apk">Prefere o arquivo APK? Baixar (avançado)</a>
       </div>
-      <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
+      <p class="note" id="appIos" hidden>No iPhone, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>. O jogo abre em tela cheia e o modo sozinho funciona sem internet.</p>
     </div>
     <div class="card">
       <h3>Como jogar</h3>
@@ -172,6 +191,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
       <div class="how" id="legend"></div>
     </div>
     <button class="ghost" id="btToTitle">Tela inicial</button>
+    <a class="sub" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
 
@@ -620,6 +640,7 @@ class Runner {
   respawn(){
     const L = this.L; this.pos = L.start; this.x = L.start % L.w; this.y = (L.start / L.w) | 0;
     this.moving = null; this.queued = null; this.dead = 0; this.tide = L.h + 2; this.tideT = 0; this.trail.length = 0; this.spawnFx = 1;
+    this.moves = []; // jogadas desde a última volta ao início (a sala confere o caminho na chegada)
   }
   swipe(d){
     if (this.finished || this.dead > 0) return;
@@ -631,6 +652,7 @@ class Runner {
     this.face = d;
     if (!r.steps.length){ this.bump = { d, t: .12 }; return; }
     this.moving = { steps: r.steps, prog: 0, from: this.pos };
+    if (this.moves.length < 4000) this.moves.push(d);
     sfx('swish');
   }
   kill(){
@@ -694,8 +716,51 @@ function burst(x, y, color, n){
 }
 
 /* ============================== sala (quem cria a sala manda) ============================== */
+const PROTO = 2; // versão do protocolo da sala (quem tem o jogo antigo é avisado para atualizar)
+const isLocalId = id => id === 'h' || id === 'p1' || id === 'p2';
 class Room {
-  constructor(out){ this.out = out; this.players = []; this.rounds = 3; this.bet = null; this.phase = 'lobby'; this.timer = 0; this.lastDots = {}; }
+  constructor(out){ this.out = out; this.players = []; this.rounds = 3; this.bet = null; this.phase = 'lobby'; this.tm = null; this.lastDots = {}; this.rate = new Map(); this.drop = null; }
+  // um único temporizador da sala; no modo 2 no mesmo celular ele para junto com a pausa
+  later(fn, ms){ this.clearLater(); const tm = { fn, due: performance.now() + ms, left: null }; tm.id = setTimeout(() => { if (this.tm === tm) this.tm = null; fn(); }, ms); this.tm = tm; }
+  clearLater(){ if (this.tm){ clearTimeout(this.tm.id); this.tm = null; } }
+  pause(){ if (this.tm && this.tm.left == null){ clearTimeout(this.tm.id); this.tm.left = Math.max(0, this.tm.due - performance.now()); } }
+  resume(){ if (this.tm && this.tm.left != null) this.later(this.tm.fn, this.tm.left); }
+  // limite de mensagens por aparelho (evita que um celular derrube a sala mandando lixo)
+  allow(id){
+    if (isLocalId(id)) return true;
+    const now = performance.now(); let b = this.rate.get(id);
+    if (!b){ b = { tok: 40, t: now }; this.rate.set(id, b); }
+    b.tok = Math.min(40, b.tok + (now - b.t) * 0.03); b.t = now;
+    if (b.tok < 1) return false;
+    b.tok--; return true;
+  }
+  // confere se a chegada é possível: o caminho enviado tem que sair do início e chegar na porta,
+  // e não dá para chegar antes do tempo mínimo de percorrer esse caminho
+  plausible(m){
+    const cur = this.cur, mv = m && Array.isArray(m.mv) ? m.mv : null;
+    if (!cur || !mv || !mv.length || mv.length > 4000) return false;
+    const L = genLevel(cur.idx, cur.seed); let pos = L.start, steps = 0;
+    for (let i = 0; i < mv.length; i++){
+      const d = mv[i];
+      if (d !== 0 && d !== 1 && d !== 2 && d !== 3) return false;
+      const r = slide(L, pos, d, true);
+      if (r.loop || r.dead) return false;
+      steps += r.steps.length;
+      if (r.exit){
+        if (i !== mv.length - 1) return false;
+        const minT = steps / SPEED, wall = (performance.now() - cur.at) / 1000;
+        return (+m.time || 0) >= minT - 0.25 && wall >= 3.2 + minT - 0.5;
+      }
+      pos = r.end;
+    }
+    return false;
+  }
+  kick(id){
+    if (this.phase !== 'lobby' || isLocalId(id) || !this.players.some(p => p.id === id)) return;
+    this.out(id, { t:'reject', why:'Quem criou a sala tirou você da sala.' });
+    this.leave(id);
+    if (this.drop) this.drop(id);
+  }
   add(id, name){
     const used = new Set(this.players.map(p => p.color)); let c = 0; while (used.has(c)) c++;
     this.players.push({ id, name: clean(name, 14) || 'Jogador ' + (this.players.length + 1), color: c, on: true });
@@ -710,13 +775,14 @@ class Room {
   snap(){ return { t:'lobby', players: this.players, rounds: this.rounds, bet: this.bet, phase: this.phase }; }
   sync(){ this.out(null, this.snap()); }
   handle(id, m){
-    if (!m || typeof m.t !== 'string') return;
+    if (!m || typeof m.t !== 'string' || !this.allow(id)) return;
     const p = this.players.find(p => p.id === id);
     if (!p && m.t !== 'hello') return;
     const isHost = id === this.players[0]?.id || id === 'p1' || id === 'p2';
     switch (m.t){
       case 'hello':
         if (p) return;
+        if (!isLocalId(id) && (m.v | 0) < PROTO){ this.out(id, { t:'reject', why:'Essa sala está numa versão mais nova do jogo. Recarregue a página (ou feche e abra o app) e entre de novo.' }); return; }
         if (this.phase !== 'lobby'){ this.out(id, { t:'reject', why:'A partida já começou. Espere acabar e entre de novo.' }); return; }
         if (this.players.length >= 6){ this.out(id, { t:'reject', why:'A sala está cheia (6 pessoas).' }); return; }
         this.out(id, { t:'you', id }); this.add(id, m.name); break;
@@ -727,7 +793,8 @@ class Room {
         this.bet = { text, by: id, votes: { [id]: true } }; this.sync(); break; }
       case 'vote': if (this.bet && this.phase === 'lobby'){ this.bet.votes[id] = !!m.yes; this.sync(); } break;
       case 'unbet': if (this.bet && (this.bet.by === id || isHost) && this.phase === 'lobby'){ this.bet = null; this.sync(); } break;
-      case 'start': if (isHost && this.phase === 'lobby') this.startMatch(); break;
+      case 'start': if (isHost && this.phase === 'lobby' && this.players.length >= 2) this.startMatch(); break;
+      case 'kick': if (isHost && typeof m.id === 'string') this.kick(m.id); break;
       case 'again': if (isHost && this.phase === 'final'){ this.phase = 'lobby'; this.players = this.players.filter(p => p.on); this.sync(); this.out(null, { t:'toLobby' }); } break;
       case 'pos': if (this.phase === 'play'){ this.lastDots[id] = m.g | 0; this.out(null, { t:'pos', id, x: +m.x || 0, y: +m.y || 0, d: m.d ? 1 : 0, f: m.f ? 1 : 0 }, id); } break;
       case 'finish': this.finish(id, m); break;
@@ -740,28 +807,31 @@ class Room {
   }
   nextRound(){
     this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play';
-    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx: Math.min(45, 3 + (this.round - 1) * 6), seed: (this.seed + this.round * 977) >>> 0 });
-    clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 243000);
+    const idx = Math.min(45, 3 + (this.round - 1) * 6), seed = (this.seed + this.round * 977) >>> 0;
+    this.cur = { idx, seed, at: performance.now() };
+    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, seed });
+    this.later(() => this.endRound(), 243000);
   }
   finish(id, m){
     if (this.phase !== 'play' || this.fin.some(f => f.id === id)) return;
+    if (!isLocalId(id) && !this.plausible(m)) return; // chegada impossível: ignorada
     this.fin.push({ id, time: Math.max(0, +m.time || 0), dots: m.g | 0 });
     const place = this.fin.length; let deadline = null;
-    if (place === 1){ deadline = 40; clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 40000); }
+    if (place === 1){ deadline = 40; this.later(() => this.endRound(), 40000); }
     this.out(null, { t:'finished', id, place, time: +m.time || 0, deadline });
     this.checkAllDone();
   }
   checkAllDone(){
     if (this.phase !== 'play' || !this.fin) return;
     const active = this.players.filter(p => p.on);
-    if (active.every(p => this.fin.some(f => f.id === p.id))){ clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 1400); }
+    if (active.every(p => this.fin.some(f => f.id === p.id))) this.later(() => this.endRound(), 1400);
   }
   ranking(){
     return this.players.map(p => ({ id: p.id, ...this.totals[p.id] })).sort((a, b) => b.pts - a.pts || b.wins - a.wins || a.time - b.time || b.dots - a.dots);
   }
   endRound(){
     if (this.phase !== 'play') return;
-    clearTimeout(this.timer);
+    this.clearLater();
     const n = this.players.length;
     const results = this.players.map(p => {
       const i = this.fin.findIndex(f => f.id === p.id), f = this.fin[i];
@@ -771,8 +841,8 @@ class Room {
     }).sort((a, b) => (a.place || 99) - (b.place || 99));
     const last = this.round >= this.rounds;
     this.out(null, { t:'roundEnd', round: this.round, rounds: this.rounds, results, totals: this.ranking(), last });
-    if (last){ this.phase = 'final'; this.timer = setTimeout(() => this.final(), 3800); }
-    else { this.phase = 'inter'; this.timer = setTimeout(() => this.nextRound(), 4800); }
+    if (last){ this.phase = 'final'; this.later(() => this.final(), 3800); }
+    else { this.phase = 'inter'; this.later(() => this.nextRound(), 4800); }
   }
   final(){
     const rk = this.ranking();
@@ -823,7 +893,7 @@ function randCode(){ const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let s = ''; for (let 
 function myName(){ return clean($('#inName').value, 14) || 'Jogador'; }
 
 function teardown(){
-  try{ game.room && clearTimeout(game.room.timer); }catch(e){}
+  try{ game.room && game.room.clearLater(); }catch(e){}
   try{ for (const c of game.conns.values()) c.close(); }catch(e){}
   try{ game.hostConn && game.hostConn.close(); }catch(e){}
   try{ game.peer && game.peer.destroy(); }catch(e){}
@@ -851,6 +921,8 @@ function createOnline(tries = 0){
   peer.on('open', () => {
     game.mode = 'online'; game.host = true; game.me = ['h']; game.code = code;
     game.room = new Room(roomOut);
+    // tirar alguém da sala: o aviso sai antes e a conexão fecha logo depois
+    game.room.drop = pid => { const c = game.conns.get(pid); game.conns.delete(pid); setTimeout(() => { try{ c && c.close(); }catch(e){} }, 400); };
     game.phase = 'lobby'; show('scrLobby');
     game.room.add('h', myName());
   });
@@ -884,16 +956,21 @@ function joinOnline(code){
   $('#wtTitle').textContent = 'Entrando na sala ' + code + '…'; $('#wtNote').textContent = 'Procurando quem criou a sala.'; show('scrWait');
   const peer = new Peer(undefined, peerOpts());
   game.peer = peer; game.mode = 'online'; game.code = code;
-  const giveUp = setTimeout(() => { if (game.phase === 'menu') toMenu('Não achei a sala ' + code + '. Confira o código.'); }, 15000);
+  const mine = () => game.peer === peer; // ignora eventos de uma tentativa antiga (cancelada)
+  const giveUp = setTimeout(() => { if (mine() && game.phase === 'menu') toMenu('Não consegui entrar na sala ' + code + '. Confira o código e a internet. Se não der, tentem os dois no mesmo Wi-Fi.'); }, 15000);
   peer.on('open', () => {
+    if (!mine()) return;
     const conn = peer.connect('fuganeon-' + code.toLowerCase(), { reliable: true });
     game.hostConn = conn;
-    conn.on('open', () => { clearTimeout(giveUp); conn.send({ t:'hello', name: myName() }); });
-    conn.on('data', m => onMsg(m));
-    conn.on('close', () => { if (game.mode === 'online' && !game.host) toMenu('A sala foi fechada por quem criou.'); });
+    conn.on('open', () => { clearTimeout(giveUp); conn.send({ t:'hello', name: myName(), v: PROTO }); });
+    conn.on('data', m => { if (mine()) onMsg(m); });
+    conn.on('close', () => {
+      clearTimeout(giveUp);
+      if (mine() && game.mode === 'online' && !game.host) toMenu(game.lobby ? 'A sala foi fechada por quem criou.' : 'Não consegui conectar com a sala. Confira a internet ou tentem os dois no mesmo Wi-Fi.');
+    });
     conn.on('error', () => {});
   });
-  peer.on('error', e => { clearTimeout(giveUp); if (game.phase === 'menu') toMenu(netError(e)); else toast(netError(e)); });
+  peer.on('error', e => { if (!mine()) return; clearTimeout(giveUp); if (game.phase === 'menu') toMenu(netError(e)); else toast(netError(e)); });
 }
 
 function onMsg(m){
@@ -926,33 +1003,47 @@ function onMsg(m){
 /* ============================== rodadas ============================== */
 function startRound(m){
   game.phase = 'play'; game.roundInfo = m; game.paused = false;
-  const L = genLevel(m.idx, m.seed); game.level = L;
+  const t0 = performance.now(), L = genLevel(m.idx, m.seed), genS = (performance.now() - t0) / 1000;
+  game.level = L;
   game.runners = game.me.map(id => new Runner(L, id, pname(id), pcolor(id)));
-  game.ghosts = {}; game.deadline = null; game.countdown = 3.2; game.clock = 0; parts = [];
+  // celular mais lento demora mais para montar o labirinto: desconta da contagem para todo mundo largar junto
+  game.ghosts = {}; game.deadline = null; game.countdown = Math.max(0.6, 3.2 - genS); game.clock = 0; parts = [];
   show(null); sfx('tick');
 }
+const soloSeed = n => 1000 + n * 13;
 function startSolo(n){
   teardown();
-  game.mode = 'solo'; game.soloLevel = n; game.me = ['solo']; game.phase = 'play'; game.paused = false;
-  const L = genLevel(n, 1000 + n * 13); game.level = L;
-  game.runners = [new Runner(L, 'solo', myName(), COLORS[0])];
-  game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; parts = [];
-  show(null);
+  game.mode = 'solo'; game.soloLevel = n; game.me = ['solo'];
+  const go = () => {
+    if (game.mode !== 'solo' || game.soloLevel !== n || game.level) return; // cancelado ou já começou
+    game.phase = 'play'; game.paused = false;
+    const L = genLevel(n, soloSeed(n)); game.level = L;
+    game.runners = [new Runner(L, 'solo', myName(), COLORS[0])];
+    game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; parts = [];
+    show(null);
+  };
+  if (genCache.has(n + ':' + soloSeed(n))) { go(); return; }
+  // fase ainda não montada: mostra o aviso antes de travar o processador montando o labirinto
+  $('#wtTitle').textContent = 'Montando a fase ' + n + '…'; $('#wtNote').textContent = 'Só um instante.'; show('scrWait');
+  requestAnimationFrame(() => requestAnimationFrame(go));
 }
 function onRunnerFinish(r){
   if (game.mode === 'solo'){
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
+    const L0 = game.level;
     setTimeout(() => {
-      if (game.mode !== 'solo') return;
+      if (game.mode !== 'solo' || game.level !== L0) return;
       game.phase = 'solodone';
       $('#sdLevel').textContent = 'Fase ' + game.soloLevel;
       const L = game.level, box = $('#sdStats'); box.replaceChildren(
         statRow('Tempo', fmtTime(r.time)), statRow('Pontinhos', r.dots + ' de ' + L.totalDots), statRow('Voltas pro início', String(r.deaths)));
       show('scrSoloDone');
+      // adianta a montagem da próxima fase enquanto a pessoa lê o resultado
+      setTimeout(() => { if (game.phase === 'solodone' && game.level === L0) genLevel(game.soloLevel + 1, soloSeed(game.soloLevel + 1)); }, 450);
     }, 900);
     return;
   }
-  send(r.id, { t:'finish', time: +r.time.toFixed(2), g: r.dots });
+  send(r.id, { t:'finish', time: +r.time.toFixed(2), g: r.dots, mv: r.moves.slice() });
 }
 function statRow(k, v){ return h('div', { class:'rk', style:'grid-template-columns:1fr auto' }, h('span', { class:'nm' }, k), h('span', { class:'pts' }, v)); }
 function rankRow(pos, id, main, sub, first){
@@ -977,7 +1068,7 @@ function showFinal(m){
     fb.hidden = false;
     const kids = [h('h3', null, 'A aposta'), h('div', { class:'quote' }, m.bet.text)];
     if (m.bet.loser){
-      kids.push(h('div', { class:'verdict' }, 'Quem ganhou: ', h('b', null, pname(m.bet.winner)), h('br'), 'Quem perdeu: ', h('b', { style:'color:var(--hot)' }, pname(m.bet.loser))));
+      kids.push(h('div', { class:'verdict' }, 'Quem ganhou: ', h('b', null, pname(m.bet.winner)), h('br'), 'Quem perdeu: ', h('b', { style:'color:var(--pink)' }, pname(m.bet.loser))));
       kids.push(h('p', { class:'note' }, 'Valeu para quem topou: ' + m.bet.ins.map(pname).join(', ') + '.'));
     } else kids.push(h('p', { class:'note' }, 'Menos de duas pessoas toparam, então a aposta não valeu.'));
     fb.replaceChildren(...kids);
@@ -1001,7 +1092,8 @@ function renderLobby(){
       nameEl.addEventListener('change', () => { send(p.id, { t:'name', name: nameEl.value }); if (game.mode === 'online') { $('#inName').value = nameEl.value; store.set('name', clean(nameEl.value, 14)); } });
     } else nameEl = h('span', { class:'nm' }, p.name);
     return h('div', { class:'pl' }, h('span', { class:'sw', style:'background:' + COLORS[p.color] + ';color:' + COLORS[p.color] }), h('div', { class:'grow', style:'min-width:0;display:flex' }, nameEl),
-      i === 0 && game.mode === 'online' ? h('span', { class:'pill host' }, 'criou') : null, mine && game.mode === 'online' ? h('span', { class:'pill' }, 'você') : null);
+      i === 0 && game.mode === 'online' ? h('span', { class:'pill host' }, 'criou') : null, mine && game.mode === 'online' ? h('span', { class:'pill' }, 'você') : null,
+      game.host && game.mode === 'online' && !mine ? kickBtn(p) : null);
   }));
   if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus();
   // rodadas
@@ -1012,6 +1104,15 @@ function renderLobby(){
   $('#btStart').hidden = !game.host; $('#lbWait').hidden = game.host;
   $('#btStart').disabled = !enough;
   $('#btStart').textContent = enough ? 'Começar partida' : 'Esperando mais alguém entrar…';
+}
+// quem criou a sala pode tirar alguém (ex.: um desconhecido que acertou o código); pede confirmação no 2º toque
+function kickBtn(p){
+  const b = h('button', { class:'small ghost kick', 'aria-label':'Tirar ' + p.name + ' da sala' }, 'Tirar');
+  b.addEventListener('click', () => {
+    if (!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent = 'Certeza?'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'Tirar'; }, 2500); return; }
+    send(game.me[0], { t:'kick', id: p.id });
+  });
+  return b;
 }
 function renderBet(lb){
   const c = $('#betCard'), bet = lb.bet;
@@ -1146,7 +1247,12 @@ function drawWorld(vp){
   // outros jogadores (fantasminhas com transparência em xadrez)
   const others = [];
   for (const o of game.runners) if (o !== r) others.push({ x: o.x, y: o.y, color: o.color, name: o.name, dead: o.dead > 0, face: o.face });
-  for (const id in game.ghosts){ const gh = game.ghosts[id]; others.push({ x: gh.x, y: gh.y, color: pcolor(id), name: pname(id), dead: gh.dead, face: gh.face || 0 }); }
+  const nowMs = performance.now();
+  for (const id in game.ghosts){
+    const gh = game.ghosts[id], pl = player(id);
+    if ((pl && pl.on === false) || nowMs - (gh.seen || 0) > 4000) continue; // saiu da sala ou parou de mandar posição
+    others.push({ x: gh.x, y: gh.y, color: pcolor(id), name: pname(id), dead: gh.dead, face: gh.face || 0 });
+  }
   for (const o of others){
     if (o.dead) continue;
     const X = Math.round(ox + o.x * TS), Y = Math.round(oy + o.y * TS); if (Y < -20 || Y > vp.h + 20) continue;
@@ -1291,7 +1397,7 @@ game.dt = 0.016;
 function frame(t){
   const dt = Math.max(0, Math.min(0.05, (t - lastT) / 1000)); lastT = t; game.dt = dt;
   if (!$('#scrTitle').hidden) drawTitle(dt);
-  if (game.phase === 'play' && !(game.paused && game.mode === 'solo')){
+  if (game.phase === 'play' && !(game.paused && game.mode !== 'online')){ // no online a partida segue para os outros
     if (game.countdown > 0){
       const before = Math.ceil(game.countdown - .2); game.countdown -= dt; const after = Math.ceil(game.countdown - .2);
       if (after !== before) sfx(after > 0 ? 'tick' : 'go');
@@ -1361,10 +1467,25 @@ addEventListener('keydown', e => {
 });
 function openPause(){
   if (game.phase !== 'play') return;
-  game.paused = true;
-  $('#psNote').textContent = game.mode === 'solo' ? 'O tempo está parado.' : 'A partida continua rolando para os outros.';
+  if (!game.paused){
+    game.paused = true; game.pauseAt = performance.now();
+    if (game.mode === 'local' && game.room) game.room.pause(); // os dois estão no mesmo celular: para tudo
+  }
+  $('#psNote').textContent = game.mode === 'online' ? 'A partida continua rolando para os outros.' : 'O tempo está parado.';
   show('scrPause');
 }
+function resumeGame(){
+  if (game.paused){
+    game.paused = false;
+    if (game.mode === 'local'){
+      if (game.room) game.room.resume();
+      if (game.deadline) game.deadline += performance.now() - (game.pauseAt || performance.now());
+    }
+  }
+  show(null);
+}
+// saiu do app (ligação, trocou de app): pausa sozinho, menos no online
+document.addEventListener('visibilitychange', () => { if (document.hidden && game.phase === 'play' && game.mode !== 'online' && game.level) openPause(); });
 
 /* ============================== telas ============================== */
 const MAX_LEVEL = 50;
@@ -1425,7 +1546,7 @@ $('#btAgain').addEventListener('click', () => send(game.me[0], { t:'again' }));
 $('#btFinalExit').addEventListener('click', () => toMenu());
 $('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; store.set('soloLast', n); startSolo(n); });
 $('#btSoloMenu').addEventListener('click', () => toMenu());
-$('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
+$('#btResume').addEventListener('click', resumeGame);
 $('#btQuit').addEventListener('click', () => toMenu());
 const PUBLIC_URL = 'https://pixelfuga.vercel.app/';
 function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
@@ -1442,7 +1563,7 @@ $('#btShare').addEventListener('click', () => {
 window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
-  if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
+  if (vis === 'scrPause'){ resumeGame(); return true; }
   if (vis === 'scrSolo'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
@@ -1450,7 +1571,22 @@ window.__fneonBack = () => {
 };
 const IN_APP = /FugaNeonApp/.test(navigator.userAgent);
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-if (!IN_APP){ $('#appCard').hidden = false; $('#appAndroid').hidden = IS_IOS; $('#appIos').hidden = !IS_IOS; }
+const STANDALONE = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+if (!IN_APP && !STANDALONE){ $('#appCard').hidden = false; $('#appAndroid').hidden = IS_IOS; $('#appIos').hidden = !IS_IOS; }
+// app instalável (PWA): instala pelo navegador, sem APK, e o modo sozinho funciona sem internet
+let installEv = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; $('#btInstall').hidden = false; $('#installHelp').hidden = true; });
+$('#btInstall').addEventListener('click', async () => {
+  if (!installEv) return;
+  const ev = installEv; installEv = null; ev.prompt();
+  try{ await ev.userChoice; }catch(e){}
+  $('#btInstall').hidden = true; $('#installHelp').hidden = false;
+});
+addEventListener('appinstalled', () => { $('#appCard').hidden = true; toast('Pronto! O Pixel Fuga está na sua tela inicial.'); });
+if ('serviceWorker' in navigator && !IN_APP && /^https?:$/.test(location.protocol)){
+  const reg = () => navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (document.readyState === 'complete') reg(); else addEventListener('load', reg);
+}
 
 buildLegend(); resize(); refreshMenu(); show('scrTitle');
 // abrir pelo link de convite: vai direto para o menu com o código preenchido
