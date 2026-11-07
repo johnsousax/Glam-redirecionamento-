@@ -14,7 +14,7 @@ Texto e botões ficam fora das áreas cobertas pelo Instagram no topo e na base 
 ## Textos sugeridos para o anúncio
 
 **1. Prêmio**
-- Texto principal: Zerou as 100 fases pegando todos os pontinhos? Os R$ 50 no Pix são seus. 🕹️ Jogo grátis, direto no navegador. Regras no app.
+- Texto principal: Zerou as 100 fases pegando pelo menos 90% dos pontinhos? Os R$ 50 no Pix são seus. 🕹️ Jogo grátis, direto no navegador. Regras no app.
 - Título: Desafio Pixel Fuga: R$ 50 no Pix
 - Botão: Jogar
 

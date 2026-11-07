@@ -19,9 +19,10 @@ Labirinto em pixel art: deslize, desvie dos perigos e fuja antes dos amigos.
 Deslize o dedo e o bonequinho dispara até bater na parede. Ache a porta dourada no alto do labirinto antes que os perigos te peguem!
 
 - 100 fases em 10 mundos: Porão, Esgoto, Caverna de Cristal, Fornalha, Torre de Gelo, Mansão Assombrada, Pântano, Fábrica, Laboratório e Tempestade
-- 15 perigos: espinhos, setas, lasers, portais, espinhos que sobem, esmagadores, maré de plasma, bombas, fantasma caçador, escuridão, lama, cola, lança-chamas, poção da confusão e raios
+- 15 perigos: espinhos, setas, lasers, portais, espinhos que sobem, esmagadores, maré de plasma, bombas, fantasma caçador, vento assombrado, lama, cola, lança-chamas, poção da confusão e raios
 - Pegue 80% dos pontinhos para abrir a porta de cada fase
-- Desafio: quem zerar as 100 fases com 100% dos pontinhos ganha R$ 50 (regras dentro do jogo)
+- Novo modo Ultra Labirinto: labirinto gigante inteiro na tela, sozinho ou com amigos
+- Desafio: quem zerar as 100 fases com pelo menos 90% dos pontinhos ganha R$ 50 (regras dentro do jogo)
 - Jogue sozinho, a 2 no mesmo celular (tela dividida) ou numa sala online com até 6 amigos
 - Salas com código de 4 letras: mande o convite no WhatsApp e jogue na hora
 - Modo sozinho funciona sem internet

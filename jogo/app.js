@@ -33,7 +33,7 @@ function publicText(s, n){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrHow','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
+const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -171,7 +171,7 @@ const WORLDS = [
   { name:'Caverna de Cristal', wall:'#4b3f8f', hi:'#8af0e6', lo:'#221c4a', floor:'#0d0b1a', speck:'#252047', news:'Espinhos que sobem e esmagadores' },
   { name:'Fornalha',           wall:'#a3322b', hi:'#ff9a3e', lo:'#4d1412', floor:'#150808', speck:'#351311', news:'A maré de plasma sobe atrás de você' },
   { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Bombas, e tudo junto mais rápido' },
-  { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Escuridão e o fantasma caçador' },
+  { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Vento assombrado e o fantasma caçador' },
   { name:'Pântano',            wall:'#4f6b2a', hi:'#a8d45a', lo:'#24331a', floor:'#0b110a', speck:'#1c2a14', news:'Lama que te deixa lento e cola que te prende' },
   { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lança-chamas' },
   { name:'Laboratório',        wall:'#8f88b0', hi:'#ffffff', lo:'#4a4468', floor:'#13111d', speck:'#24203a', news:'Poção da confusão: os controles invertem' },
@@ -226,6 +226,23 @@ function noTraps(an){
   while (q.length){ const s = q.pop(); for (const p of (rev.get(s) || [])) if (!good.has(p)){ good.add(p); q.push(p); } }
   return good.size === an.seen.size;
 }
+// posições de onde NÃO dá para voltar ao início
+function unlinked(an){
+  const rev = new Map();
+  for (const [s, outs] of an.edges) for (const o of outs){ if (!rev.has(o)) rev.set(o, []); rev.get(o).push(s); }
+  const start = an.seen.keys().next().value, ok = new Set([start]), q = [start];
+  while (q.length){ const s = q.pop(); for (const p of (rev.get(s) || [])) if (!ok.has(p)){ ok.add(p); q.push(p); } }
+  return [...an.seen.keys()].filter(s => !ok.has(s));
+}
+// verdadeiro se de qualquer posição alcançável dá para voltar ao início (e, portanto, a qualquer outra posição)
+function allLinked(an){
+  const rev = new Map();
+  for (const [s, outs] of an.edges) for (const o of outs){ if (!rev.has(o)) rev.set(o, []); rev.get(o).push(s); }
+  const start = an.seen.keys().next().value, ok = new Set([start]), q = [start];
+  while (q.length){ const s = q.pop(); for (const p of (rev.get(s) || [])) if (!ok.has(p)){ ok.add(p); q.push(p); } }
+  return ok.size === an.seen.size;
+}
+const solid = an => noTraps(an) && allLinked(an);
 const genCache = new Map();
 function genLevel(idx, seed){
   const key = idx + ':' + seed;
@@ -272,7 +289,19 @@ function genLevel(idx, seed){
     L.exit = best;
     an = analyze(L, true);
     if (!an.exitFrom.length) continue;
-    const clean0 = noTraps(an);
+    // conserto: onde não dá para voltar, abre uma passagem na parede ao lado
+    for (let fix = 0; fix < 60 && !solid(an); fix++){
+      const bad = unlinked(an), s0 = bad.length ? bad[Math.floor(R() * bad.length)] : [...an.seen.keys()][Math.floor(R() * an.seen.size)];
+      const cx = s0 % w, cy = (s0 / w) | 0, cand = [];
+      for (const [dx, dy] of DIRS){ const nx = cx + dx, ny = cy + dy, t = ny * w + nx;
+        if (nx > 0 && ny > 0 && nx < w - 1 && ny < h - 1 && grid[t] === WALL && ((nx % 2) !== (ny % 2))) cand.push(t); }
+      if (!cand.length) break;
+      grid[cand[Math.floor(R() * cand.length)]] = 0;
+      an = analyze(L, true);
+      if (!an.exitFrom.length) break;
+    }
+    if (!an.exitFrom.length) continue;
+    const clean0 = solid(an);
     if (!clean0 && attempt < 70) continue;
     // o labirinto precisa ser quase todo alcançável deslizando
     let floorN = 0; for (const v of grid) if (!v) floorN++;
@@ -280,7 +309,7 @@ function genLevel(idx, seed){
     if (analyze(L, true, false).trav.size < floorN * Math.max(0.42, 0.66 - attempt * 0.004)) continue; // a porta não pode esconder metade do mapa
     const base = an.trav.size;
     // cada obstáculo novo não pode fechar pedaços do labirinto (senão some o espaço para se perder)
-    const valid = a => a.exitFrom.length > 0 && !a.loops && a.trav.size >= base * 0.95 && (!clean0 || noTraps(a));
+    const valid = a => a.exitFrom.length > 0 && !a.loops && a.trav.size >= base * 0.95 && (!clean0 || solid(a));
     const special = t => t === start || t === L.exit || L.arrow[t] || L.tele[t] >= 0 || L.spikes[t] || L.glue[t];
     // setas (a partir da fase 6)
     const nAr = idx < 6 ? 0 : Math.min(1 + Math.floor((idx - 6) / 3), 8);
@@ -397,9 +426,9 @@ function genLevel(idx, seed){
       L.bombs.push({ t, x: bx, y: by, period: 3 + R() * 1.4, phase: R() * 4 });
     }
     if (idx >= 31 && idx <= 50) L.tideSpeed = 0.22 + Math.min(idx - 31, 30) * 0.009;
-    // fantasma caçador (51-60 e 91-100) e escuridão (51-60)
+    // fantasma caçador (51-60 e 91-100) e vento assombrado (51-60)
     if ((idx >= 51 && idx <= 60) || idx >= 91) L.ghost = { sx: 1, sy: 1, speed: 0.8 + Math.min(idx >= 91 ? idx - 91 : idx - 51, 9) * 0.04, delay: 4 };
-    if (idx >= 51 && idx <= 60) L.dark = true;
+    if (idx >= 51 && idx <= 60) L.wind = { every: 6.5 - Math.min(idx - 51, 9) * 0.25, warn: 1.3 };
     // raios (a partir da fase 91): caem perto de você depois de um aviso
     if (idx >= 91) L.storm = { every: 3.6 - Math.min(idx - 91, 9) * 0.15, warn: 1.1 };
     // lama (61+) e poção da confusão (81+): não mudam o caminho, só o jeito de andar
@@ -419,6 +448,50 @@ function genLevel(idx, seed){
   genCache.set(key, fallback);
   return fallback;
 }
+/* ---------- Ultra Labirinto: labirinto gigante, visão completa, para nos cruzamentos ---------- */
+const ULTRA_LEVELS = 10;
+const ULTRA_THEME = { name:'Ultra', wall:'#e2552f', hi:'#e2552f', lo:'#b23a1a', floor:'#f3ecdc', speck:'#f3ecdc' };
+const ULTRA_COLORS = ['#2e2a5c', '#127a86', '#c2185b', '#2f6a1a', '#a86b00', '#5a3fd1'];
+function blankFields(w, h){
+  return { spikes:new Uint8Array(w * h), dots:new Uint8Array(w * h), arrow:new Uint8Array(w * h), tele:new Int32Array(w * h).fill(-1), pairs:[],
+    lasers:[], laserAt:new Map(), rspikes:[], rsAt:new Map(), drones:[], bombs:[], ghost:null, glue:new Uint8Array(w * h), mud:new Uint8Array(w * h),
+    conf:new Uint8Array(w * h), flames:[], flameAt:new Map(), storm:null, wind:null, tideSpeed:0, tideDelay:6, totalDots:0 };
+}
+function genUltra(n, seed){
+  const key = 'u' + n + ':' + seed; if (genCache.has(key)) return genCache.get(key);
+  const R = rng((seed * 131 + n * 977) >>> 0);
+  const cw = Math.min(8 + n * 2, 28), ch = Math.round(cw * 1.6), w = cw * 2 + 1, h = ch * 2 + 1;
+  const grid = new Uint8Array(w * h).fill(WALL), vis = new Uint8Array(cw * ch), st = [[0, 0]];
+  vis[0] = 1; grid[1 * w + 1] = 0;
+  while (st.length){
+    const [cx, cy] = st[st.length - 1], nb = [];
+    for (const [dx, dy] of DIRS){ const nx = cx + dx, ny = cy + dy; if (nx >= 0 && ny >= 0 && nx < cw && ny < ch && !vis[ny * cw + nx]) nb.push([nx, ny, dx, dy]); }
+    if (!nb.length){ st.pop(); continue; }
+    const [nx, ny, dx, dy] = nb[Math.floor(R() * nb.length)];
+    vis[ny * cw + nx] = 1; grid[(2 * cy + 1 + dy) * w + 2 * cx + 1 + dx] = 0; grid[(2 * ny + 1) * w + 2 * nx + 1] = 0; st.push([nx, ny]);
+  }
+  // poucas voltas extras: continua sendo labirinto de verdade
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++)
+    if (grid[y * w + x] === WALL && ((x % 2) !== (y % 2)) && R() < 0.035) grid[y * w + x] = 0;
+  const start = 1 * w + 1, exit = (h - 2) * w + (w - 1);
+  grid[exit] = 0; // saída na parede de baixo, à direita (igual labirinto de papel)
+  const L = Object.assign(blankFields(w, h), { ultra: true, idx: n, seed, w, h, grid, start, exit, theme: ULTRA_THEME });
+  genCache.set(key, L); return L;
+}
+function slideUltra(L, pos, d){
+  const w = L.w, h = L.h; let x = pos % w, y = (pos / w) | 0; const path = [], steps = [];
+  const open = (x, y) => x >= 0 && y >= 0 && x < w && y < h && L.grid[y * w + x] !== WALL;
+  for(;;){
+    const nx = x + DIRS[d][0], ny = y + DIRS[d][1];
+    if (!open(nx, ny)) break;
+    x = nx; y = ny; const t = y * w + x; path.push(t); steps.push({ t, d });
+    if (t === L.exit) return { end: t, path, steps, exit: true };
+    const a = DIRS[(d + 1) % 4], b = DIRS[(d + 3) % 4];
+    if (open(x + a[0], y + a[1]) || open(x + b[0], y + b[1])) break; // cruzamento: para para você escolher
+  }
+  return { end: y * w + x, path, steps };
+}
+const mover = L => L.ultra ? (l, p, d) => slideUltra(l, p, d) : (l, p, d) => slide(l, p, d, true);
 // bomba: 0 parada, 1 piscando (vai explodir), 2 explodindo
 function bombState(b, clock){ const t = (clock + b.phase) % b.period; return t > b.period - .35 ? 2 : t > b.period - 1.35 ? 1 : 0; }
 // menor tempo possível para sair da fase: soma das casas do caminho mais curto até a porta / velocidade
@@ -429,13 +502,13 @@ function minFinishTime(L){
     q.sort((a, b) => a[0] - b[0]); const [d0, s] = q.shift();
     if (d0 > (dist.get(s) ?? Infinity) || d0 >= best) continue;
     for (let d = 0; d < 4; d++){
-      const r = slide(L, s, d, true); if (!r.steps.length || r.dead || r.loop) continue;
+      const r = mover(L)(L, s, d); if (!r.steps.length || r.dead || r.loop) continue;
       const nd = d0 + r.steps.length;
       if (r.exit){ best = Math.min(best, nd); continue; }
       if (nd < (dist.get(r.end) ?? Infinity)){ dist.set(r.end, nd); q.push([nd, r.end]); }
     }
   }
-  return (L._minT = isFinite(best) ? best / 18 : 0);
+  return (L._minT = isFinite(best) ? best / (L.ultra ? ULTRA_SPEED : 18) : 0);
 }
 const timedOn = (g, clock) => (((clock + g.phase) % g.period) / g.period) < g.on;
 const timedPhase = (g, clock) => ((clock + g.phase) % g.period) / g.period;
@@ -446,19 +519,21 @@ function dronePos(dr, clock){
 
 /* ============================== o bonequinho ============================== */
 const SPEED = 18; // casas por segundo
+const ULTRA_SPEED = 13;
 class Runner {
   constructor(L, id, name, color){
     this.L = L; this.id = id; this.name = name; this.color = color;
     this.got = new Uint8Array(L.w * L.h); this.dots = 0; this.deaths = 0; this.finished = false; this.time = 0;
     this.trail = []; this.face = 0; this.squash = 0; this.camX = null; this.camY = null; this.place = 0;
-    this.need = game.mode === 'solo' ? Math.ceil(L.totalDots * 0.8) : 0; this.lockMsg = 0; this.confT = 0;
+    this.need = game.mode === 'solo' && !L.ultra ? Math.ceil(L.totalDots * 0.8) : 0; this.lockMsg = 0; this.confT = 0;
+    this.speed = L.ultra ? ULTRA_SPEED : SPEED; this.visited = new Uint8Array(L.w * L.h); this.visited[L.start] = 1;
     this.respawn();
   }
   respawn(){
     const L = this.L; this.pos = L.start; this.x = L.start % L.w; this.y = (L.start / L.w) | 0;
     this.moving = null; this.queued = null; this.dead = 0; this.tide = L.h + 2; this.tideT = 0; this.trail.length = 0; this.spawnFx = 1;
     if (L.ghost){ this.gx = L.ghost.sx; this.gy = L.ghost.sy; this.gT = 0; }
-    this.strikes = []; this.stormT = 0; this.confT = 0;
+    this.strikes = []; this.stormT = 0; this.confT = 0; this.windT = 0; this.windDir = null;
   }
   locked(){ return this.need > 0 && this.dots < this.need; }
   swipe(d){
@@ -468,20 +543,21 @@ class Runner {
     this.go(d);
   }
   go(d){
-    const r = slide(this.L, this.pos, d, true);
+    const r = mover(this.L)(this.L, this.pos, d);
     this.face = d;
     if (!r.steps.length){ this.bump = { d, t: .12 }; return; }
     if (r.loop){ const seen = new Set(); let cut = r.steps.length; r.steps.forEach((st, i) => { const k = st.t * 4 + st.d; if (seen.has(k) && cut === r.steps.length) cut = i; seen.add(k); }); r.steps = r.steps.slice(0, Math.max(1, cut)); }
     this.moving = { steps: r.steps, prog: 0, from: this.pos };
     sfx('swish');
   }
-  kill(){
+  kill(voluntary){
     if (this.dead > 0 || this.finished) return;
-    this.dead = 0.8; this.deaths++; this.moving = null; this.queued = null;
+    this.dead = 0.8; if (!voluntary) this.deaths++; this.moving = null; this.queued = null;
     burst(this.x, this.y, this.color, 24); burst(this.x, this.y, P.cream, 8); sfx('die'); buzz(60);
   }
   reach(st){
     const L = this.L, t = st.t;
+    this.visited[t] = 1;
     if (L.dots[t] && !this.got[t]){ this.got[t] = 1; this.dots++; sfx('dot'); }
     if (st.tp){ burst(this.x, this.y, P.mint, 10); sfx('tele'); }
     if (L.arrow[t]) sfx('arrow');
@@ -514,7 +590,7 @@ class Runner {
     if (this.moving){
       const m = this.moving, n = m.steps.length, old = m.prog;
       const cur = m.steps[Math.min(n - 1, Math.floor(m.prog))].t;
-      m.prog = Math.min(n, m.prog + SPEED * (L.mud[cur] ? 0.33 : 1) * dt);
+      m.prog = Math.min(n, m.prog + this.speed * (L.mud[cur] ? 0.33 : 1) * dt);
       for (let k = Math.floor(old); k < Math.floor(m.prog); k++) if (this.reach(m.steps[k])) return;
       const k = Math.floor(m.prog);
       if (k >= n){
@@ -556,6 +632,22 @@ class Runner {
       }
       this.strikes = this.strikes.filter(s => s.warn > 0 || s.boom > 0);
     }
+    // vento assombrado: avisa a direção e empurra quem estiver parado (só para direções seguras)
+    if (L.wind){
+      this.windT = (this.windT || 0) + dt;
+      if (this.windDir == null && this.windT >= L.wind.every - L.wind.warn){
+        const opts = [0, 1, 2, 3].filter(d => { const r = slide(L, this.pos, d, true); return r.steps.length && !r.dead && !r.loop; });
+        if (opts.length){ this.windDir = opts[Math.floor(Math.random() * opts.length)]; this.windWarn = L.wind.warn; sfx('swish'); }
+        else this.windT = 0;
+      }
+      if (this.windDir != null){
+        this.windWarn -= dt;
+        if (this.windWarn <= 0){
+          if (!this.moving){ const r = slide(L, this.pos, this.windDir, true); if (r.steps.length && !r.dead && !r.loop) this.go(this.windDir); }
+          this.windDir = null; this.windT = 0;
+        }
+      }
+    }
     if (L.ghost){
       this.gT += dt;
       if (this.gT > L.ghost.delay){
@@ -588,15 +680,29 @@ class Room {
     this.sync();
   }
   leave(id){
-    const p = this.players.find(p => p.id === id); if (!p) return;
+    const p = this.players.find(p => p.id === id); if (!p || this.dead) return;
     if (this.phase === 'lobby'){ this.players = this.players.filter(q => q.id !== id); if (this.bet){ delete this.bet.votes[id]; if (this.bet.by === id) this.bet = null; } }
-    else { p.on = false; this.checkAllDone(); }
+    else {
+      p.on = false;
+      // sobrou uma pessoa só: a partida acaba e todo mundo volta para a sala
+      if (!this.local && (this.phase === 'play' || this.phase === 'inter') && this.players.filter(q => q.on).length < 2){
+        this.abort('Os outros jogadores saíram. A partida foi encerrada.'); return;
+      }
+      this.checkAllDone();
+    }
     this.sync();
   }
-  snap(){ return { t:'lobby', players: this.players, rounds: this.rounds, bet: this.bet, phase: this.phase }; }
+  abort(why){
+    clearTimeout(this.timer); this.phase = 'lobby'; this.players = this.players.filter(q => q.on);
+    this.out(null, { t:'aborted', why }); this.sync();
+  }
+  destroy(){ clearTimeout(this.timer); this.dead = true; this.out = () => {}; }
+  snap(){ return { t:'lobby', players: this.players, rounds: this.rounds, kind: this.kind || 'classic', bet: this.bet, phase: this.phase }; }
   sync(){ this.out(null, this.snap()); }
   handle(id, m){
-    if (!m || typeof m !== 'object' || typeof m.t !== 'string' || m.t.length > 12) return;
+    if (this.dead || !m || typeof m !== 'object' || typeof m.t !== 'string' || m.t.length > 12) return;
+    (this.seen = this.seen || {})[id] = Date.now();
+    if (m.t === 'hb') return;
     // limite: até 40 mensagens por segundo por jogador; nome, aposta e voto no máximo a cada 0,8 s
     const now = Date.now(), rl = (this.rl = this.rl || {}), b = rl[id] || (rl[id] = { t: now, n: 0, last: 0 });
     if (now - b.t > 1000){ b.t = now; b.n = 0; }
@@ -613,6 +719,7 @@ class Room {
         this.out(id, { t:'you', id }); this.add(id, m.name); break;
       case 'name': p.name = publicText(m.name, 14) || p.name; this.sync(); break;
       case 'rounds': if (isHost && [3,5,7].includes(m.n)){ this.rounds = m.n; this.sync(); } break;
+      case 'kind': if (isHost && this.phase === 'lobby' && (m.k === 'classic' || m.k === 'ultra')){ this.kind = m.k; this.sync(); } break;
       case 'bet': {
         const text = publicText(m.text, 120); if (!text || this.phase !== 'lobby') return;
         this.bet = { text, by: id, votes: { [id]: true } }; this.sync(); break; }
@@ -637,10 +744,12 @@ class Room {
   nextRound(){
     this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play'; this.ending = false;
     // cada rodada tem tempo máximo; labirintos maiores ganham mais tempo
-    const idx = Math.min(95, 3 + (this.round - 1) * 14), limit = Math.round(Math.min(270, 120 + idx * 1.5));
+    const ultra = this.kind === 'ultra';
+    const idx = ultra ? Math.min(ULTRA_LEVELS, 2 + (this.round - 1) * 2) : Math.min(95, 3 + (this.round - 1) * 14);
+    const limit = ultra ? 60 + idx * 15 : Math.round(Math.min(270, 120 + idx * 1.5));
     const seed = (this.seed + this.round * 977) >>> 0;
-    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed });
-    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(genLevel(idx, seed));
+    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed, kind: ultra ? 'ultra' : 'classic' });
+    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(ultra ? genUltra(idx, seed) : genLevel(idx, seed));
     clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), (3.2 + limit) * 1000 + 600);
   }
   finish(id, m){
@@ -726,7 +835,8 @@ function randCode(){ const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let s = ''; for (let 
 function myName(){ return clean($('#inName').value, 14) || 'Jogador'; }
 
 function teardown(){
-  try{ game.room && clearTimeout(game.room.timer); }catch(e){}
+  try{ clearInterval(game.hbTimer); }catch(e){}
+  try{ game.room && game.room.destroy(); }catch(e){}
   try{ for (const c of game.conns.values()) c.close(); }catch(e){}
   try{ game.hostConn && game.hostConn.close(); }catch(e){}
   try{ game.peer && game.peer.destroy(); }catch(e){}
@@ -738,7 +848,7 @@ function toMenu(msg){ teardown(); show('scrMenu'); refreshMenu(); if (msg) toast
 function startLocal(){
   teardown();
   game.mode = 'local'; game.host = true; game.me = ['p1', 'p2'];
-  game.room = new Room(roomOut);
+  game.room = new Room(roomOut); game.room.local = true;
   game.phase = 'lobby'; show('scrLobby');
   game.room.add('p1', myName() === 'Jogador' ? 'Jogador 1' : myName());
   game.room.add('p2', 'Jogador 2');
@@ -754,6 +864,13 @@ function createOnline(tries = 0){
   peer.on('open', () => {
     game.mode = 'online'; game.host = true; game.me = ['h']; game.code = code;
     game.room = new Room(roomOut);
+    // sinal de vida a cada 2 s; quem some por 9 s sai da sala
+    game.hbTimer = setInterval(() => {
+      if (!game.room) return;
+      roomOut(null, { t:'hb' });
+      const now = Date.now();
+      for (const [pid, c] of game.conns) if (now - ((game.room.seen || {})[pid] || now) > 9000){ game.conns.delete(pid); try{ c.close(); }catch(e){} game.room.leave(pid); }
+    }, 2000);
     game.room.onKick = pid => setTimeout(() => { const c = game.conns.get(pid); if (c) try{ c.close(); }catch(e){} }, 400);
     game.phase = 'lobby'; show('scrLobby');
     game.room.add('h', myName());
@@ -761,7 +878,7 @@ function createOnline(tries = 0){
   let n = 0;
   peer.on('connection', conn => {
     const pid = 'c' + (++n) + Math.random().toString(36).slice(2, 5);
-    conn.on('open', () => { game.conns.set(pid, conn); });
+    conn.on('open', () => { game.conns.set(pid, conn); if (game.room) (game.room.seen = game.room.seen || {})[pid] = Date.now(); });
     conn.on('data', m => game.room && game.room.handle(pid, m));
     conn.on('close', () => { game.conns.delete(pid); game.room && game.room.leave(pid); });
     conn.on('error', () => {});
@@ -792,8 +909,14 @@ function joinOnline(code){
   peer.on('open', () => {
     const conn = peer.connect('fuganeon-' + code.toLowerCase(), { reliable: true });
     game.hostConn = conn;
-    conn.on('open', () => { clearTimeout(giveUp); conn.send({ t:'hello', name: myName() }); });
-    conn.on('data', m => onMsg(m));
+    conn.on('open', () => {
+      clearTimeout(giveUp); conn.send({ t:'hello', name: myName() }); game.hostSeen = Date.now();
+      game.hbTimer = setInterval(() => {
+        try{ conn.open && conn.send({ t:'hb' }); }catch(e){}
+        if (Date.now() - game.hostSeen > 10000) toMenu('Perdemos a conexão com a sala.');
+      }, 2000);
+    });
+    conn.on('data', m => { game.hostSeen = Date.now(); onMsg(m); });
     conn.on('close', () => { if (game.mode === 'online' && !game.host) toMenu('A sala foi fechada por quem criou.'); });
     conn.on('error', () => {});
   });
@@ -801,8 +924,10 @@ function joinOnline(code){
 }
 
 function onMsg(m){
-  if (!m || typeof m.t !== 'string') return;
+  if (!game.mode || !m || typeof m.t !== 'string') return;
   switch (m.t){
+    case 'hb': break;
+    case 'aborted': game.phase = 'lobby'; game.level = null; game.runners = []; show('scrLobby'); renderLobby(); toast(clean(m.why, 120), 4500); break;
     case 'you': game.me = [m.id]; break;
     case 'reject': toMenu(m.why); break;
     case 'lobby':
@@ -829,14 +954,23 @@ function onMsg(m){
 /* ============================== rodadas ============================== */
 function startRound(m){
   game.phase = 'play'; game.roundInfo = m; game.paused = false;
-  const L = genLevel(m.idx, m.seed); game.level = L;
-  game.runners = game.me.map(id => new Runner(L, id, pname(id), pcolor(id)));
+  const L = m.kind === 'ultra' ? genUltra(Math.min(ULTRA_LEVELS, m.idx | 0), m.seed) : genLevel(m.idx, m.seed); game.level = L;
+  game.runners = game.me.map(id => new Runner(L, id, pname(id), L.ultra ? ULTRA_COLORS[player(id)?.color || 0] : pcolor(id)));
   game.ghosts = {}; game.deadline = null; game.countdown = 3.2; game.clock = 0; parts = [];
   game.roundEndsAt = performance.now() + (3.2 + (m.limit || 180)) * 1000;
   show(null); sfx('tick');
 }
+function startUltra(n){
+  teardown();
+  game.mode = 'solo'; game.soloKind = 'ultra'; game.soloLevel = n; game.me = ['solo']; game.phase = 'play'; game.paused = false;
+  const L = genUltra(n, 5000 + n * 17); game.level = L;
+  game.runners = [new Runner(L, 'solo', myName(), ULTRA_COLORS[0])];
+  game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; game.roundEndsAt = null; parts = [];
+  show(null);
+}
 function startSolo(n){
   teardown();
+  game.soloKind = 'classic';
   game.mode = 'solo'; game.soloLevel = n; game.me = ['solo']; game.phase = 'play'; game.paused = false;
   const L = genLevel(n, 1000 + n * 13); game.level = L;
   game.runners = [new Runner(L, 'solo', myName(), COLORS[0])];
@@ -861,7 +995,8 @@ function recordLevel(n, r){
   if (!old || (old[2] || 0) < pct || ((old[2] || 0) === pct && cur[0] < old[0])) c.l[n] = cur;
   saveCamp(c);
 }
-const perfect = e => !!e && (e[2] || 0) >= 100;
+const CHALLENGE_PCT = 90; // a fase conta para o desafio com pelo menos 90% dos pontinhos
+const perfect = e => !!e && (e[2] || 0) >= CHALLENGE_PCT;
 function campDone(c = loadCamp()){ let k = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (perfect(c.l[i])) k++; return k; }
 function prizeCode(c, name){
   const parts = []; for (let i = 1; i <= PRIZE_LEVELS; i++) parts.push(c.l[i] ? c.l[i].join(':') : '-');
@@ -871,7 +1006,7 @@ function prizeCode(c, name){
 function prizeTotals(c){ let t = 0, d = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]){ t += c.l[i][0]; d += c.l[i][1]; } return { t, d }; }
 function updatePrizeLink(){
   const c = loadCamp(), name = clean($('#pzName').value, 30) || myName(), code = prizeCode(c, name), tot = prizeTotals(c);
-  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Fuga com 100% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
+  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Fuga com pelo menos 90% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
     + 'Nome: ' + name + '\nTempo somado: ' + fmtTime(tot.t) + '\nVoltas ao início: ' + tot.d + '\nCódigo: ' + code;
   $('#pzWa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
   $('#pzCode2').textContent = code;
@@ -880,30 +1015,45 @@ function showPrize(){
   const c = loadCamp(); if (campDone(c) < PRIZE_LEVELS) return;
   const tot = prizeTotals(c);
   if (!$('#pzName').value) $('#pzName').value = store.get('name', '') || '';
-  $('#pzStats').replaceChildren(statRow('Fases com 100%', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
+  $('#pzStats').replaceChildren(statRow('Fases com 90% ou mais', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
   updatePrizeLink(); sfx('win');
   show('scrPrize');
 }
 function refreshPrize(){
   const k = campDone();
   $('#pzBar').style.width = (k / PRIZE_LEVELS * 100) + '%'; $('#pzBarBox').setAttribute('aria-valuenow', k);
-  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases com 100%' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
-  $('#pzShort').textContent = k >= PRIZE_LEVELS ? 'Você zerou! Toque para resgatar o prêmio.' : k ? 'Você já tem ' + k + ' de 100 fases com 100%. Toque para ver.' : 'Zere as 100 fases com 100% dos pontinhos e ganhe R$ 50. Toque para ver.';
+  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases com 90% ou mais' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
+  $('#pzShort').textContent = k >= PRIZE_LEVELS ? 'Você zerou! Toque para resgatar o prêmio.' : k ? 'Você já tem ' + k + ' de 100 fases com 90% ou mais. Toque para ver.' : 'Zere as 100 fases com pelo menos 90% dos pontinhos e ganhe R$ 50. Toque para ver.';
   $('#btClaim').hidden = k < PRIZE_LEVELS;
 }
 function onRunnerFinish(r){
+  if (game.mode === 'solo' && game.level.ultra){
+    const n = game.soloLevel, best = store.get('ultraBest', {}), prev = best[n];
+    if (!prev || r.time < prev) best[n] = Math.round(r.time * 10) / 10;
+    store.set('ultraBest', best); store.set('ultraMax', Math.max(store.get('ultraMax', 1), Math.min(ULTRA_LEVELS, n + 1)));
+    setTimeout(() => {
+      if (game.mode !== 'solo') return;
+      game.phase = 'solodone';
+      $('#sdLevel').textContent = 'Ultra Labirinto ' + n;
+      $('#sdStats').replaceChildren(statRow('Tempo', fmtTime(r.time)), statRow('Seu recorde', fmtTime(best[n])));
+      $('#btNext').hidden = n >= ULTRA_LEVELS;
+      show('scrSoloDone');
+    }, 900);
+    return;
+  }
   if (game.mode === 'solo'){
+    $('#btNext').hidden = false;
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
     recordLevel(game.soloLevel, r);
     const L = game.level, pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
       game.phase = 'solodone';
-      if (pct >= 100 && campDone() >= PRIZE_LEVELS && (game.soloLevel === PRIZE_LEVELS || !store.get('prizeSeen', false))){ store.set('prizeSeen', true); showPrize(); return; }
+      if (pct >= CHALLENGE_PCT && campDone() >= PRIZE_LEVELS && (game.soloLevel === PRIZE_LEVELS || !store.get('prizeSeen', false))){ store.set('prizeSeen', true); showPrize(); return; }
       $('#sdLevel').textContent = 'Fase ' + game.soloLevel;
       $('#sdStats').replaceChildren(
         statRow('Tempo', fmtTime(r.time)), statRow('Pontinhos', r.dots + ' de ' + L.totalDots + ' (' + pct + '%)'), statRow('Voltas pro início', String(r.deaths)),
-        h('p', { class:'note' }, pct >= 100 ? 'PERFEITO! Esta fase já conta para o Desafio R$ 50.' : 'Para esta fase contar no Desafio R$ 50, termine com 100% dos pontinhos.'));
+        h('p', { class:'note' }, pct >= CHALLENGE_PCT ? 'Esta fase já conta para o Desafio R$ 50.' : 'Para esta fase contar no Desafio R$ 50, termine com pelo menos 90% dos pontinhos.'));
       show('scrSoloDone');
     }, 900);
     return;
@@ -964,6 +1114,7 @@ function renderLobby(){
   }));
   if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus();
   // rodadas
+  for (const b of document.querySelectorAll('#segKind button')){ b.setAttribute('aria-pressed', String(b.dataset.k === (lb.kind || 'classic'))); b.disabled = !game.host; }
   for (const b of document.querySelectorAll('#segRounds button')){ b.setAttribute('aria-pressed', String(+b.dataset.r === lb.rounds)); b.disabled = !game.host; }
   // aposta
   renderBet(lb);
@@ -1052,7 +1203,45 @@ function bake(L){
   L._pairOf = new Map(); L.pairs.forEach(([a, b], i) => { L._pairOf.set(a, i); L._pairOf.set(b, i); });
   L._bake = c; return c;
 }
+function bakeUltra(L, ts){
+  if (L._ub && L._ub.ts === ts) return L._ub.c;
+  const c = document.createElement('canvas'); c.width = L.w * ts; c.height = L.h * ts; const g = c.getContext('2d');
+  g.fillStyle = ULTRA_THEME.wall;
+  for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if (L.grid[y * L.w + x] === WALL) g.fillRect(x * ts, y * ts, ts, ts);
+  L._ub = { ts, c }; return c;
+}
+function drawUltra(vp){
+  const g = bg, L = game.level, r = vp.r, top = HUDH + vp.top, avail = vp.h - top - vp.bot - 4;
+  const ts = Math.max(1, Math.floor(Math.min((vp.w - 4) / L.w, avail / L.h)));
+  const ox = Math.floor((vp.w - L.w * ts) / 2), oy = top + 2 + Math.floor((avail - L.h * ts) / 2);
+  const now = performance.now() / 1000, fr = Math.floor(now * 6);
+  g.fillStyle = ULTRA_THEME.floor; g.fillRect(0, 0, vp.w, vp.h);
+  // rastro: por onde você já passou
+  g.fillStyle = mix(r.color, ULTRA_THEME.floor, .72);
+  for (let t = 0; t < r.visited.length; t++) if (r.visited[t]) g.fillRect(ox + (t % L.w) * ts, oy + ((t / L.w) | 0) * ts, ts, ts);
+  g.drawImage(bakeUltra(L, ts), ox, oy);
+  // saída piscando
+  const EX = ox + (L.exit % L.w) * ts, EY = oy + ((L.exit / L.w) | 0) * ts;
+  g.fillStyle = fr % 2 ? '#2f6a1a' : '#a6e85a'; g.fillRect(EX, EY, ts, ts); g.fillRect(EX + ts, EY, Math.max(1, ts), ts);
+  // outros jogadores
+  const others = [];
+  for (const o of game.runners) if (o !== r) others.push({ x: o.x, y: o.y, color: o.color });
+  for (const id in game.ghosts){ const gh = game.ghosts[id]; others.push({ x: gh.x, y: gh.y, color: pcolor(id) }); }
+  for (const o of others){ g.globalAlpha = .55; g.fillStyle = o.color; g.fillRect(Math.round(ox + o.x * ts), Math.round(oy + o.y * ts), ts, ts); }
+  g.globalAlpha = 1;
+  // você (pisca ao voltar ao início)
+  if (!(game.countdown <= 0 && r.spawnFx > .3 && fr % 2)){
+    const X = Math.round(ox + r.x * ts), Y = Math.round(oy + r.y * ts), sz = Math.max(ts, 2);
+    // contorno dourado pulsando para achar o bonequinho no labirinto gigante
+    const halo = Math.max(2, ts) + (fr % 4 < 2 ? 2 : 3);
+    g.strokeStyle = '#d99a00'; g.lineWidth = 1; g.strokeRect(X + ts / 2 - halo + .5, Y + ts / 2 - halo + .5, halo * 2 - 1, halo * 2 - 1);
+    g.fillStyle = r.color; g.fillRect(X - (sz - ts) / 2, Y - (sz - ts) / 2, sz, sz);
+    if (ts >= 4){ g.fillStyle = '#ffffff'; g.fillRect(X + 1, Y + 1, 1, 1); g.fillRect(X + ts - 2, Y + 1, 1, 1); }
+  }
+  for (const p of parts){ g.fillStyle = p.color; g.fillRect(Math.round(ox + p.x * ts), Math.round(oy + p.y * ts), 1, 1); }
+}
 function drawWorld(vp){
+  if (game.level.ultra) return drawUltra(vp);
   const g = bg, L = game.level, r = vp.r, T = L.theme, WW = L.w * TS, WH = L.h * TS;
   const bot = vp.bot;
   const top = HUDH + vp.top, avail = vp.h - top - bot;
@@ -1177,18 +1366,17 @@ function drawWorld(vp){
       g.fillStyle = '#ffd1e3'; for (let b = 0; b < 6; b++){ const bxp = (b * 23 + Math.floor(now * 7) * 3) % vp.w; g.fillRect(bxp, Y + 5 + ((b * 5 + fr) % 9), 1, 1); }
     }
   }
-  // escuridão: só a luz da lanterna em volta do jogador (e um brilho fraco na porta)
-  if (L.dark){
-    const dc = darkCv.getContext('2d');
-    if (darkCv.width !== vp.w || darkCv.height !== vp.h){ darkCv.width = vp.w; darkCv.height = vp.h; }
-    dc.globalCompositeOperation = 'source-over'; dc.globalAlpha = 1; dc.clearRect(0, 0, vp.w, vp.h);
-    dc.fillStyle = 'rgba(4,3,10,0.96)'; dc.fillRect(0, 0, vp.w, vp.h);
-    dc.globalCompositeOperation = 'destination-out';
-    const cx = ox + r.x * TS + 4, cy = oy + r.y * TS + 4, Rl = 34 + (fr % 3 === 0 ? 1 : 0);
-    for (const [rr, a] of [[Rl + 12, .3], [Rl + 6, .45], [Rl, 1]]){ dc.globalAlpha = a; dc.beginPath(); dc.arc(cx, cy, rr, 0, 7); dc.fill(); }
-    dc.globalAlpha = .55; dc.beginPath(); dc.arc(ox + (L.exit % L.w) * TS + 4, oy + ((L.exit / L.w) | 0) * TS + 4, 9, 0, 7); dc.fill();
-    dc.globalAlpha = 1; dc.globalCompositeOperation = 'source-over';
-    g.drawImage(darkCv, 0, 0);
+  // vento assombrado: aviso com setas e rajadas cruzando a tela
+  if (L.wind && r.windDir != null){
+    const d = r.windDir, k = Math.max(0, r.windWarn);
+    g.globalAlpha = .55; g.fillStyle = '#d9d0ff';
+    for (let i = 0; i < 14; i++){
+      const t2 = (now * 2.2 + i * 0.37) % 1, len = 10 + (i % 3) * 6;
+      const lx = d % 2 ? (d === 1 ? t2 * vp.w : vp.w - t2 * vp.w) : ((i * 47) % vp.w), ly = d % 2 ? (30 + (i * 53) % (vp.h - 40)) : (d === 2 ? t2 * vp.h : vp.h - t2 * vp.h);
+      if (d % 2) g.fillRect(Math.round(lx), Math.round(ly), len, 1); else g.fillRect(Math.round(lx), Math.round(ly), 1, len);
+    }
+    g.globalAlpha = 1;
+    if (k > 0) drawText(g, 'VENTO ' + ['CIMA', 'DIREITA', 'BAIXO', 'ESQUERDA'][d] + '!', Math.round(vp.w / 2), HUDH + vp.top + 4, '#d9d0ff', 1, 'center');
   }
   if (L.ghost && r.gT > L.ghost.delay - 1.5 && r.dead <= 0){
     g.globalAlpha = r.gT < L.ghost.delay ? (fr % 2 ? .3 : .6) : .85;
@@ -1203,12 +1391,14 @@ function drawHUD(vp){
   g.fillStyle = T.hi; g.fillRect(0, top + HUDH - 1, vp.w, 1);
   g.drawImage(SPR.pause(), 3, top + 3); g.drawImage(SPR.restart(), vp.w - 10, top + 3);
   vp.btnPause = [0, top, 16, top + HUDH]; vp.btnRestart = [vp.w - 16, top, vp.w, top + HUDH];
-  const label = game.mode === 'solo' ? 'FASE ' + game.soloLevel : 'RODADA ' + game.roundInfo.round + '/' + game.roundInfo.rounds;
+  const label = game.mode === 'solo' ? (L.ultra ? 'ULTRA ' : 'FASE ') + game.soloLevel : 'RODADA ' + game.roundInfo.round + '/' + game.roundInfo.rounds;
   drawText(g, label, 14, top + 3, T.hi);
   if (game.mode === 'solo' || !game.roundEndsAt) drawText(g, fmtTime(r.time).replace('s', ''), vp.w - 14, top + 3, P.cream, 1, 'right');
   else { const left = Math.max(0, (game.roundEndsAt - performance.now()) / 1000); drawText(g, fmtTime(left).replace('s', ''), vp.w - 14, top + 3, left < 20 && Math.floor(left * 2) % 2 ? P.red : P.gold, 1, 'right'); }
-  drawText(g, '•' + r.dots + '/' + L.totalDots, 14, top + 11, P.gold);
-  if (game.mode === 'solo'){
+  if (L.ultra){ if (game.runners.length <= 1) drawText(g, 'ULTRA LABIRINTO', 14, top + 11, '#e2552f'); }
+  else drawText(g, '•' + r.dots + '/' + L.totalDots, 14, top + 11, P.gold);
+  if (L.ultra){ if (game.runners.length > 1) drawText(g, shortName(r.name), vp.w - 14, top + 11, P.gray, 1, 'right'); }
+  else if (game.mode === 'solo'){
     const pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
     drawText(g, pct + '%', vp.w - 14, top + 11, pct >= 100 ? '#ffffff' : pct >= 80 ? P.lime : P.pink, 1, 'right');
   } else drawText(g, game.runners.length > 1 ? shortName(r.name) : T.name.split(' ')[0], vp.w - 14, top + 11, P.gray, 1, 'right');
@@ -1371,7 +1561,7 @@ function endTouch(e){
   const tc = touches.get(e.pointerId); touches.delete(e.pointerId); if (!tc || tc.moved) return;
   const vp = tc.vp, x = tc.ox, y = tc.oy, inR = b => b && x >= b[0] && y >= b[1] && x < b[2] && y < b[3];
   if (inR(vp.btnPause)) openPause();
-  else if (inR(vp.btnRestart) && game.countdown <= 0){ const r = vp.r; if (!r.finished && r.dead <= 0) r.kill(); }
+  else if (inR(vp.btnRestart) && game.countdown <= 0){ const r = vp.r; if (!r.finished && r.dead <= 0) r.kill(true); }
 }
 cv.addEventListener('pointerup', endTouch);
 cv.addEventListener('pointercancel', e => touches.delete(e.pointerId));
@@ -1399,12 +1589,22 @@ function refreshMenu(){
   const n = Math.min(soloMax(), store.get('soloLast', 1));
   $('#soloSub').textContent = 'Fase ' + n + ' · Mundo ' + (worldIdx(n) + 1) + ': ' + WORLDS[worldIdx(n)].name;
 }
+function renderUltra(){
+  const max = store.get('ultraMax', 1), best = store.get('ultraBest', {});
+  $('#ultraGrid').replaceChildren(...Array.from({ length: ULTRA_LEVELS }, (_, i) => {
+    const k = i + 1, b = h('button', { class: best[k] ? 'done' : '', 'aria-label': 'Ultra ' + k + (best[k] ? ', recorde ' + fmtTime(best[k]) : '') }, k > max ? '--' : String(k));
+    if (k > max) b.disabled = true; else b.addEventListener('click', () => startUltra(k));
+    return b;
+  }));
+  const done = Object.keys(best).length;
+  $('#ultraNote').textContent = done ? 'Você já fez ' + done + ' de ' + ULTRA_LEVELS + ' fases. Toque numa fase para tentar bater seu recorde.' : 'Cada fase é maior que a anterior. Termine uma para abrir a próxima.';
+}
 function renderWorlds(){
   const max = soloMax(), last = store.get('soloLast', 1), box = $('#worlds'), camp = loadCamp();
   const sections = WORLDS.map((W, wi) => {
     const btns = Array.from({ length: 10 }, (_, i) => {
       const k = wi * 10 + i + 1;
-      const b = h('button', { class: k === last ? 'cur' : perfect(camp.l[k]) ? 'perfect' : camp.l[k] ? 'done' : '', 'aria-label': 'Fase ' + k + (perfect(camp.l[k]) ? ', 100%' : camp.l[k] ? ', concluída' : '') }, k > max ? '--' : String(k));
+      const b = h('button', { class: k === last ? 'cur' : perfect(camp.l[k]) ? 'perfect' : camp.l[k] ? 'done' : '', 'aria-label': 'Fase ' + k + (perfect(camp.l[k]) ? ', vale para o desafio' : camp.l[k] ? ', concluída' : '') }, k > max ? '--' : String(k));
       if (k > max) b.disabled = true; else b.addEventListener('click', () => { store.set('soloLast', k); startSolo(k); });
       return b;
     });
@@ -1422,7 +1622,7 @@ function buildLegend(){
   const mk = draw => { const c = document.createElement('canvas'); c.width = 8; c.height = 8; draw(c.getContext('2d')); return c.toDataURL(); };
   const items = [
     [mk(g => g.drawImage(playerSpr(P.orange, 1, false), 0, 0)), '<b>Você.</b> Desliza até bater na parede.'],
-    [mk(g => { g.fillStyle = P.cream; g.fillRect(3, 3, 2, 2); }), '<b>Pontinhos.</b> Pegue 80% para abrir a porta. 100% vale para o desafio.'],
+    [mk(g => { g.fillStyle = P.cream; g.fillRect(3, 3, 2, 2); }), '<b>Pontinhos.</b> Pegue 80% para abrir a porta. Com 90% a fase vale para o desafio.'],
     [mk(g => g.drawImage(SPR.door(0), 0, 0)), '<b>Porta dourada.</b> A saída. Com cadeado, ainda faltam pontinhos.'],
     [mk(g => g.drawImage(SPR.spikes(), 0, 0)), '<b>1. Espinhos</b> (fase 2+). Tocou, volta pro início.'],
     [mk(g => g.drawImage(SPR.arrow(1, 1), 0, 0)), '<b>2. Setas</b> (fase 6+). Mudam sua direção no meio do caminho.'],
@@ -1433,7 +1633,7 @@ function buildLegend(){
     [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>7. Maré de plasma</b> (fases 31 a 50). Sobe atrás de você.'],
     [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>8. Bombas</b> (fase 41+). Piscam e explodem em cruz.'],
     [mk(g => g.drawImage(SPR.ghost(0), 0, 0)), '<b>9. Fantasma</b> (fases 51 a 60 e 91+). Atravessa paredes e vem atrás de você.'],
-    [mk(g => { g.fillStyle = '#04030a'; g.fillRect(0, 0, 8, 8); g.fillStyle = '#3b3550'; g.fillRect(2, 2, 4, 4); g.fillStyle = P.gold; g.fillRect(3, 3, 2, 2); }), '<b>10. Escuridão</b> (fases 51 a 60). Você só enxerga em volta de si.'],
+    [mk(g => { g.fillStyle = '#d9d0ff'; g.fillRect(0, 1, 5, 1); g.fillRect(2, 3, 6, 1); g.fillRect(0, 5, 4, 1); g.fillRect(3, 7, 5, 1); }), '<b>10. Vento assombrado</b> (fases 51 a 60). Avisa a direção e te empurra se você estiver parado.'],
     [mk(g => g.drawImage(SPR.mud(0), 0, 0)), '<b>11. Lama</b> (fase 61+). Você atravessa bem mais devagar.'],
     [mk(g => g.drawImage(SPR.glue(), 0, 0)), '<b>12. Cola</b> (fase 61+). Te prende na hora: o deslize para ali.'],
     [mk(g => { g.drawImage(SPR.nozzle(), 0, 0); g.fillStyle = P.orange; g.fillRect(3, 0, 2, 2); }), '<b>13. Lança-chamas</b> (fase 71+). Solta fogo por até 3 casas.'],
@@ -1453,13 +1653,15 @@ $('#btCreate').addEventListener('click', () => createOnline());
 $('#btJoin').addEventListener('click', () => joinOnline($('#inCode').value));
 $('#inCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinOnline($('#inCode').value); });
 $('#inCode').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
+$('#segKind').addEventListener('click', e => { const b = e.target.closest('button'); if (b && game.host) send(game.me[0], { t:'kind', k: b.dataset.k }); });
+$('#btUltra').addEventListener('click', () => { renderUltra(); show('scrUltra'); });
 $('#segRounds').addEventListener('click', e => { const b = e.target.closest('button'); if (b && game.host) send(game.me[0], { t:'rounds', n: +b.dataset.r }); });
 $('#btStart').addEventListener('click', () => send(game.me[0], { t:'start' }));
 $('#btLeave').addEventListener('click', () => toMenu());
 $('#btWaitCancel').addEventListener('click', () => toMenu());
 $('#btAgain').addEventListener('click', () => send(game.me[0], { t:'again' }));
 $('#btFinalExit').addEventListener('click', () => toMenu());
-$('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; store.set('soloLast', n); startSolo(n); });
+$('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; if (game.soloKind === 'ultra') return startUltra(n); store.set('soloLast', n); startSolo(n); });
 $('#btSoloMenu').addEventListener('click', () => toMenu());
 $('#btClaim').addEventListener('click', showPrize);
 $('#pzToggle').addEventListener('click', () => { const b = $('#pzToggle'), open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', String(open)); $('#pzBody').hidden = !open; $('#pzShort').hidden = open; });
@@ -1481,7 +1683,7 @@ window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
-  if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow'){ show('scrMenu'); refreshMenu(); return true; }
+  if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow' || vis === 'scrUltra'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
   return false;
@@ -1500,6 +1702,6 @@ requestAnimationFrame(frame);
 // ferramentas de teste: só em ambiente local, nunca em produção
 if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){
   window.__fneon = { game, genLevel, analyze, noTraps, slide };
-  Object.assign(window, { startSolo, toMenu, recordLevel, showPrize, onRunnerFinish, refreshMenu, Room, title });
+  Object.assign(window, { startSolo, startUltra, genUltra, slideUltra, toMenu, recordLevel, showPrize, onRunnerFinish, refreshMenu, Room, title });
 }
 })();
