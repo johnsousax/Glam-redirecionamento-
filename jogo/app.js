@@ -450,19 +450,43 @@ function genLevel(idx, seed){
 }
 /* ---------- Ultra Labirinto: labirinto gigante, visão completa, para nos cruzamentos ---------- */
 const ULTRA_LEVELS = 10;
-const ULTRA_THEME = { name:'Ultra', wall:'#e2552f', hi:'#e2552f', lo:'#b23a1a', floor:'#f3ecdc', speck:'#f3ecdc' };
+// 10 estilos visuais (um por fase); "dark" = fundo escuro, jogadores em cores claras
+const ULTRA_THEMES = [
+  { name:'Papel',      wall:'#e2552f', wall2:'#f07a52', floor:'#f3ecdc', pat:'plain', exitA:'#2f6a1a', exitB:'#a6e85a', halo:'#d99a00', dark:false, look:'solid' },
+  { name:'Planta',     wall:'#ffffff', wall2:'#cfe3ff', floor:'#1d4f9c', pat:'grid',  exitA:'#ffd23f', exitB:'#ffffff', halo:'#ffd23f', dark:true,  look:'solid' },
+  { name:'Neon',       wall:'#141030', wall2:'#56f0ff', floor:'#07060f', pat:'plain', exitA:'#ff77a8', exitB:'#ffd1e3', halo:'#ff77a8', dark:true,  look:'glow' },
+  { name:'Jardim',     wall:'#2f7a2a', wall2:'#5ac24b', floor:'#d9e8a6', pat:'noise', exitA:'#c2185b', exitB:'#ff77a8', halo:'#c2185b', dark:false, look:'hedge' },
+  { name:'Doce',       wall:'#ff77a8', wall2:'#ffd1e3', floor:'#d6f5ec', pat:'dots',  exitA:'#5a3fd1', exitB:'#b7a6ff', halo:'#5a3fd1', dark:false, look:'bevel' },
+  { name:'Gelo',       wall:'#7fc4ff', wall2:'#e6f4ff', floor:'#f7fbff', pat:'plain', exitA:'#127a86', exitB:'#56f0ff', halo:'#127a86', dark:false, look:'bevel' },
+  { name:'Lava',       wall:'#2a0f0a', wall2:'#ff8c2e', floor:'#120604', pat:'noise', exitA:'#ffd23f', exitB:'#ffffff', halo:'#ffd23f', dark:true,  look:'glow' },
+  { name:'Deserto',    wall:'#b9772f', wall2:'#e0a45a', floor:'#f4dfae', pat:'noise', exitA:'#127a86', exitB:'#56f0ff', halo:'#127a86', dark:false, look:'brick' },
+  { name:'Terminal',   wall:'#0b1f0b', wall2:'#33ff66', floor:'#020802', pat:'grid',  exitA:'#ffffff', exitB:'#33ff66', halo:'#33ff66', dark:true,  look:'glow' },
+  { name:'Galáxia',    wall:'#4b3f8f', wall2:'#b7a6ff', floor:'#0d0b1a', pat:'stars', exitA:'#ffd23f', exitB:'#ffffff', halo:'#ffd23f', dark:true,  look:'bevel' },
+];
 const ULTRA_COLORS = ['#2e2a5c', '#127a86', '#c2185b', '#2f6a1a', '#a86b00', '#5a3fd1'];
+const ULTRA_COLORS_DARK = ['#ffffff', '#56f0ff', '#ff77a8', '#a6e85a', '#ffd23f', '#b7a6ff'];
+const ultraColor = (L, i) => (L.theme.dark ? ULTRA_COLORS_DARK : ULTRA_COLORS)[i % 6];
+// tamanho de cada quadrado por fase (em pixels do jogo): fases maiores = quadrados menores = mais corredores
+const ULTRA_TS = [8, 7, 6, 5, 5, 4, 4, 3, 3, 2];
+// área de referência da sala online (celular em pé), para todos jogarem o mesmo labirinto
+const ULTRA_ONLINE_AREA = { aw: 126, ah: 252 };
+function ultraArea(){ return { aw: Math.max(40, BW - 4), ah: Math.max(60, BH - HUDH - SAFE_T - SAFE_B - 4) }; }
 function blankFields(w, h){
   return { spikes:new Uint8Array(w * h), dots:new Uint8Array(w * h), arrow:new Uint8Array(w * h), tele:new Int32Array(w * h).fill(-1), pairs:[],
     lasers:[], laserAt:new Map(), rspikes:[], rsAt:new Map(), drones:[], bombs:[], ghost:null, glue:new Uint8Array(w * h), mud:new Uint8Array(w * h),
     conf:new Uint8Array(w * h), flames:[], flameAt:new Map(), storm:null, wind:null, tideSpeed:0, tideDelay:6, totalDots:0 };
 }
-function genUltra(n, seed){
-  const key = 'u' + n + ':' + seed; if (genCache.has(key)) return genCache.get(key);
-  const R = rng((seed * 131 + n * 977) >>> 0);
-  const cw = Math.min(8 + n * 2, 28), ch = Math.round(cw * 1.6), w = cw * 2 + 1, h = ch * 2 + 1;
-  const grid = new Uint8Array(w * h).fill(WALL), vis = new Uint8Array(cw * ch), st = [[0, 0]];
-  vis[0] = 1; grid[1 * w + 1] = 0;
+function genUltra(n, seed, area = ULTRA_ONLINE_AREA){
+  const key = 'u' + n + ':' + seed + ':' + area.aw + 'x' + area.ah; if (genCache.has(key)) return genCache.get(key);
+  const R = rng((seed * 131 + n * 977) >>> 0), ts = ULTRA_TS[Math.min(ULTRA_TS.length, n) - 1];
+  // ocupa a tela toda: quantos quadrados cabem na largura e na altura (sempre ímpar)
+  let w = Math.floor(area.aw / ts), h = Math.floor(area.ah / ts);
+  if (w % 2 === 0) w--; if (h % 2 === 0) h--;
+  w = Math.max(9, w); h = Math.max(9, h);
+  const cw = (w - 1) / 2, ch = (h - 1) / 2;
+  const grid = new Uint8Array(w * h).fill(WALL), vis = new Uint8Array(cw * ch);
+  // começa embaixo à esquerda
+  const st = [[0, ch - 1]]; vis[(ch - 1) * cw] = 1; grid[(h - 2) * w + 1] = 0;
   while (st.length){
     const [cx, cy] = st[st.length - 1], nb = [];
     for (const [dx, dy] of DIRS){ const nx = cx + dx, ny = cy + dy; if (nx >= 0 && ny >= 0 && nx < cw && ny < ch && !vis[ny * cw + nx]) nb.push([nx, ny, dx, dy]); }
@@ -473,9 +497,10 @@ function genUltra(n, seed){
   // poucas voltas extras: continua sendo labirinto de verdade
   for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++)
     if (grid[y * w + x] === WALL && ((x % 2) !== (y % 2)) && R() < 0.035) grid[y * w + x] = 0;
-  const start = 1 * w + 1, exit = (h - 2) * w + (w - 1);
-  grid[exit] = 0; // saída na parede de baixo, à direita (igual labirinto de papel)
-  const L = Object.assign(blankFields(w, h), { ultra: true, idx: n, seed, w, h, grid, start, exit, theme: ULTRA_THEME });
+  const start = (h - 2) * w + 1, exit = 0 * w + (w - 2);
+  grid[exit] = 0; // saída no alto, à direita: sempre de baixo para cima
+  const theme = ULTRA_THEMES[(n - 1) % ULTRA_THEMES.length];
+  const L = Object.assign(blankFields(w, h), { ultra: true, idx: n, seed, w, h, grid, start, exit, theme, uts: ts });
   genCache.set(key, L); return L;
 }
 function slideUltra(L, pos, d){
@@ -749,7 +774,7 @@ class Room {
     const limit = ultra ? 60 + idx * 15 : Math.round(Math.min(270, 120 + idx * 1.5));
     const seed = (this.seed + this.round * 977) >>> 0;
     this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed, kind: ultra ? 'ultra' : 'classic' });
-    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(ultra ? genUltra(idx, seed) : genLevel(idx, seed));
+    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(ultra ? genUltra(idx, seed, ULTRA_ONLINE_AREA) : genLevel(idx, seed));
     clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), (3.2 + limit) * 1000 + 600);
   }
   finish(id, m){
@@ -946,8 +971,8 @@ function onMsg(m){
 /* ============================== rodadas ============================== */
 function startRound(m){
   game.phase = 'play'; game.roundInfo = m; game.paused = false;
-  const L = m.kind === 'ultra' ? genUltra(Math.min(ULTRA_LEVELS, m.idx | 0), m.seed) : genLevel(m.idx, m.seed); game.level = L;
-  game.runners = game.me.map(id => new Runner(L, id, pname(id), L.ultra ? ULTRA_COLORS[player(id)?.color || 0] : pcolor(id)));
+  const L = m.kind === 'ultra' ? genUltra(Math.min(ULTRA_LEVELS, Math.max(1, m.idx | 0)), m.seed, ULTRA_ONLINE_AREA) : genLevel(m.idx, m.seed); game.level = L;
+  game.runners = game.me.map(id => new Runner(L, id, pname(id), L.ultra ? ultraColor(L, player(id)?.color || 0) : pcolor(id)));
   game.ghosts = {}; game.deadline = null; game.countdown = 3.2; game.clock = 0; parts = [];
   game.roundEndsAt = performance.now() + (3.2 + (m.limit || 180)) * 1000;
   show(null); sfx('tick');
@@ -955,8 +980,8 @@ function startRound(m){
 function startUltra(n){
   teardown();
   game.mode = 'solo'; game.soloKind = 'ultra'; game.soloLevel = n; game.me = ['solo']; game.phase = 'play'; game.paused = false;
-  const L = genUltra(n, 5000 + n * 17); game.level = L;
-  game.runners = [new Runner(L, 'solo', myName(), ULTRA_COLORS[0])];
+  const L = genUltra(n, 5000 + n * 17, ultraArea()); game.level = L;
+  game.runners = [new Runner(L, 'solo', myName(), ultraColor(L, 0))];
   game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; game.roundEndsAt = null; parts = [];
   show(null);
 }
@@ -1192,9 +1217,25 @@ function bake(L){
 }
 function bakeUltra(L, ts){
   if (L._ub && L._ub.ts === ts) return L._ub.c;
-  const c = document.createElement('canvas'); c.width = L.w * ts; c.height = L.h * ts; const g = c.getContext('2d');
-  g.fillStyle = ULTRA_THEME.wall;
-  for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if (L.grid[y * L.w + x] === WALL) g.fillRect(x * ts, y * ts, ts, ts);
+  const T = L.theme, W = L.w, H = L.h, c = document.createElement('canvas'); c.width = W * ts; c.height = H * ts; const g = c.getContext('2d');
+  const isW = (x, y) => x < 0 || y < 0 || x >= W || y >= H || L.grid[y * W + x] === WALL;
+  // chão com padrão
+  g.fillStyle = T.floor; g.fillRect(0, 0, W * ts, H * ts);
+  const hash = (x, y) => (((x * 73856093) ^ (y * 19349663)) >>> 0);
+  if (T.pat === 'grid'){ g.fillStyle = mix(T.floor, T.wall2, .22); for (let y = 0; y < H; y += 2) g.fillRect(0, y * ts, W * ts, 1); for (let x = 0; x < W; x += 2) g.fillRect(x * ts, 0, 1, H * ts); }
+  if (T.pat === 'dots'){ g.fillStyle = mix(T.floor, T.wall, .35); for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) if (!isW(x, y) && ts >= 3) g.fillRect(x * ts + (ts >> 1), y * ts + (ts >> 1), 1, 1); }
+  if (T.pat === 'noise' || T.pat === 'stars'){ g.fillStyle = T.pat === 'stars' ? '#ffffff' : mix(T.floor, T.wall, .25);
+    for (let y = 0; y < H * ts; y++) for (let x = 0; x < W * ts; x++) if (hash(x, y) % (T.pat === 'stars' ? 97 : 23) === 0) g.fillRect(x, y, 1, 1); }
+  // paredes no estilo do tema
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+    if (!isW(x, y)) continue; const X = x * ts, Y = y * ts;
+    g.fillStyle = T.wall; g.fillRect(X, Y, ts, ts);
+    if (ts < 3) continue;
+    if (T.look === 'bevel'){ g.fillStyle = T.wall2; if (!isW(x, y - 1)) g.fillRect(X, Y, ts, 1); if (!isW(x - 1, y)) g.fillRect(X, Y, 1, ts); g.fillStyle = mix(T.wall, '#000000', .3); if (!isW(x, y + 1)) g.fillRect(X, Y + ts - 1, ts, 1); if (!isW(x + 1, y)) g.fillRect(X + ts - 1, Y, 1, ts); }
+    if (T.look === 'glow'){ g.fillStyle = T.wall2; if (!isW(x, y - 1)) g.fillRect(X, Y, ts, 1); if (!isW(x, y + 1)) g.fillRect(X, Y + ts - 1, ts, 1); if (!isW(x - 1, y)) g.fillRect(X, Y, 1, ts); if (!isW(x + 1, y)) g.fillRect(X + ts - 1, Y, 1, ts); }
+    if (T.look === 'hedge'){ g.fillStyle = T.wall2; for (let k = 0; k < ts; k++) if (hash(X + k, Y + k * 3) % 3 === 0) g.fillRect(X + (hash(X, Y + k) % ts), Y + k, 1, 1); }
+    if (T.look === 'brick'){ g.fillStyle = mix(T.wall, '#000000', .25); g.fillRect(X, Y + ts - 1, ts, 1); g.fillRect(X + ((y % 2) ? ts - 1 : 0), Y, 1, ts); g.fillStyle = T.wall2; g.fillRect(X, Y, ts, 1); }
+  }
   L._ub = { ts, c }; return c;
 }
 function drawUltra(vp){
@@ -1202,18 +1243,21 @@ function drawUltra(vp){
   const ts = Math.max(1, Math.floor(Math.min((vp.w - 4) / L.w, avail / L.h)));
   const ox = Math.floor((vp.w - L.w * ts) / 2), oy = top + 2 + Math.floor((avail - L.h * ts) / 2);
   const now = performance.now() / 1000, fr = Math.floor(now * 6);
-  g.fillStyle = ULTRA_THEME.floor; g.fillRect(0, 0, vp.w, vp.h);
-  // rastro: por onde você já passou
-  g.fillStyle = mix(r.color, ULTRA_THEME.floor, .72);
-  for (let t = 0; t < r.visited.length; t++) if (r.visited[t]) g.fillRect(ox + (t % L.w) * ts, oy + ((t / L.w) | 0) * ts, ts, ts);
+  const T = L.theme;
+  g.fillStyle = mix(T.floor, T.wall, .12); g.fillRect(0, 0, vp.w, vp.h);
   g.drawImage(bakeUltra(L, ts), ox, oy);
-  // saída piscando
+  // rastro: por onde você já passou
+  g.globalAlpha = .38; g.fillStyle = r.color;
+  for (let t = 0; t < r.visited.length; t++) if (r.visited[t]) g.fillRect(ox + (t % L.w) * ts, oy + ((t / L.w) | 0) * ts, ts, ts);
+  g.globalAlpha = 1;
+  // saída piscando no alto
   const EX = ox + (L.exit % L.w) * ts, EY = oy + ((L.exit / L.w) | 0) * ts;
-  g.fillStyle = fr % 2 ? '#2f6a1a' : '#a6e85a'; g.fillRect(EX, EY, ts, ts); g.fillRect(EX + ts, EY, Math.max(1, ts), ts);
+  g.fillStyle = fr % 2 ? T.exitA : T.exitB; g.fillRect(EX, EY, ts, ts);
+  if (EY - ts - 1 >= top){ g.fillRect(EX, EY - Math.max(2, ts) - 1, ts, Math.max(2, ts)); }
   // outros jogadores
   const others = [];
   for (const o of game.runners) if (o !== r) others.push({ x: o.x, y: o.y, color: o.color });
-  for (const id in game.ghosts){ const gh = game.ghosts[id]; others.push({ x: gh.x, y: gh.y, color: pcolor(id) }); }
+  for (const id in game.ghosts){ const gh = game.ghosts[id]; others.push({ x: gh.x, y: gh.y, color: ultraColor(L, player(id)?.color || 0) }); }
   for (const o of others){ g.globalAlpha = .55; g.fillStyle = o.color; g.fillRect(Math.round(ox + o.x * ts), Math.round(oy + o.y * ts), ts, ts); }
   g.globalAlpha = 1;
   // você (pisca ao voltar ao início)
@@ -1221,7 +1265,7 @@ function drawUltra(vp){
     const X = Math.round(ox + r.x * ts), Y = Math.round(oy + r.y * ts), sz = Math.max(ts, 2);
     // contorno dourado pulsando para achar o bonequinho no labirinto gigante
     const halo = Math.max(2, ts) + (fr % 4 < 2 ? 2 : 3);
-    g.strokeStyle = '#d99a00'; g.lineWidth = 1; g.strokeRect(X + ts / 2 - halo + .5, Y + ts / 2 - halo + .5, halo * 2 - 1, halo * 2 - 1);
+    g.strokeStyle = T.halo; g.lineWidth = 1; g.strokeRect(X + ts / 2 - halo + .5, Y + ts / 2 - halo + .5, halo * 2 - 1, halo * 2 - 1);
     g.fillStyle = r.color; g.fillRect(X - (sz - ts) / 2, Y - (sz - ts) / 2, sz, sz);
     if (ts >= 4){ g.fillStyle = '#ffffff'; g.fillRect(X + 1, Y + 1, 1, 1); g.fillRect(X + ts - 2, Y + 1, 1, 1); }
   }
@@ -1373,7 +1417,7 @@ function drawWorld(vp){
 }
 const darkCv = document.createElement('canvas');
 function drawHUD(vp){
-  const g = bg, r = vp.r, L = game.level, T = L.theme, top = vp.top;
+  const g = bg, r = vp.r, L = game.level, T = L.ultra ? { hi: L.theme.dark ? L.theme.wall2 : L.theme.wall, name: L.theme.name } : L.theme, top = vp.top;
   g.fillStyle = P.ink; g.fillRect(0, 0, vp.w, top + HUDH);
   g.fillStyle = T.hi; g.fillRect(0, top + HUDH - 1, vp.w, 1);
   g.drawImage(SPR.pause(), 3, top + 3); g.drawImage(SPR.restart(), vp.w - 10, top + 3);
@@ -1382,7 +1426,7 @@ function drawHUD(vp){
   drawText(g, label, 14, top + 3, T.hi);
   if (game.mode === 'solo' || !game.roundEndsAt) drawText(g, fmtTime(r.time).replace('s', ''), vp.w - 14, top + 3, P.cream, 1, 'right');
   else { const left = Math.max(0, (game.roundEndsAt - performance.now()) / 1000); drawText(g, fmtTime(left).replace('s', ''), vp.w - 14, top + 3, left < 20 && Math.floor(left * 2) % 2 ? P.red : P.gold, 1, 'right'); }
-  if (L.ultra){ if (game.runners.length <= 1) drawText(g, 'ULTRA LABIRINTO', 14, top + 11, '#e2552f'); }
+  if (L.ultra){ if (game.runners.length <= 1) drawText(g, 'ULTRA - ' + L.theme.name, 14, top + 11, L.theme.dark ? L.theme.wall2 : L.theme.wall); }
   else drawText(g, '•' + r.dots + '/' + L.totalDots, 14, top + 11, P.gold);
   if (L.ultra){ if (game.runners.length > 1) drawText(g, shortName(r.name), vp.w - 14, top + 11, P.gray, 1, 'right'); }
   else if (game.mode === 'solo'){
