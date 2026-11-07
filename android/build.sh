@@ -7,8 +7,8 @@
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-10}
-VERSION_NAME=${VERSION_NAME:-1.9}
+VERSION_CODE=${VERSION_CODE:-11}
+VERSION_NAME=${VERSION_NAME:-2.0}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
 # A senha da chave NUNCA fica no Git: rode com  KS_PASS='sua-senha' ./build.sh
 if [ -z "${KS_PASS:-}" ]; then echo "Defina a senha da chave: KS_PASS='...' ./build.sh" >&2; exit 1; fi

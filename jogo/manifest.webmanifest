@@ -20,6 +20,6 @@
   ],
   "screenshots": [
     { "src": "/screenshots/tela-1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Mundo 1: Porão" },
-    { "src": "/screenshots/tela-2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Dois jogadores no mesmo celular" }
+    { "src": "/screenshots/tela-2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Mundo 2: Esgoto" }
   ]
 }

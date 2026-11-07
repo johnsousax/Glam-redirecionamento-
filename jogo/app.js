@@ -685,7 +685,7 @@ class Room {
     else {
       p.on = false;
       // sobrou uma pessoa só: a partida acaba e todo mundo volta para a sala
-      if (!this.local && (this.phase === 'play' || this.phase === 'inter') && this.players.filter(q => q.on).length < 2){
+      if ((this.phase === 'play' || this.phase === 'inter') && this.players.filter(q => q.on).length < 2){
         this.abort('Os outros jogadores saíram. A partida foi encerrada.'); return;
       }
       this.checkAllDone();
@@ -710,7 +710,7 @@ class Room {
     if (m.t === 'name' || m.t === 'bet' || m.t === 'vote' || m.t === 'unbet'){ if (now - b.last < 800) return; b.last = now; }
     const p = this.players.find(p => p.id === id);
     if (!p && m.t !== 'hello') return;
-    const isHost = id === this.players[0]?.id || id === 'p1' || id === 'p2';
+    const isHost = id === this.players[0]?.id;
     switch (m.t){
       case 'hello':
         if (p) return;
@@ -800,7 +800,7 @@ class Room {
 
 /* ============================== sessão / rede ============================== */
 const game = {
-  mode: null,            // 'solo' | 'local' | 'online'
+  mode: null,            // 'solo' | 'online'
   host: false, me: [], lobby: null, code: null,
   room: null, peer: null, conns: new Map(), hostConn: null,
   phase: 'menu',         // menu | lobby | play | solodone
@@ -845,14 +845,6 @@ function teardown(){
 }
 function toMenu(msg){ teardown(); show('scrMenu'); refreshMenu(); if (msg) toast(msg, 4000); }
 
-function startLocal(){
-  teardown();
-  game.mode = 'local'; game.host = true; game.me = ['p1', 'p2'];
-  game.room = new Room(roomOut); game.room.local = true;
-  game.phase = 'lobby'; show('scrLobby');
-  game.room.add('p1', myName() === 'Jogador' ? 'Jogador 1' : myName());
-  game.room.add('p2', 'Jogador 2');
-}
 
 function createOnline(tries = 0){
   if (typeof Peer === 'undefined'){ toast('Não consegui carregar o modo online. Confira a internet e recarregue.'); return; }
@@ -1166,12 +1158,7 @@ function resize(){
   for (const r of game.runners){ r.camX = null; r.camY = null; }
 }
 addEventListener('resize', resize);
-function viewports(){
-  const rs = game.runners;
-  if (rs.length <= 1) return [{ x:0, y:0, w:BW, h:BH, rot:false, r: rs[0], top: SAFE_T, bot: SAFE_B }];
-  const hh = Math.floor(BH / 2);
-  return [{ x:0, y:hh, w:BW, h:BH - hh, rot:false, r: rs[0], top: 0, bot: SAFE_B }, { x:0, y:0, w:BW, h:hh, rot:true, r: rs[1], top: 0, bot: SAFE_T }];
-}
+function viewports(){ return [{ x:0, y:0, w:BW, h:BH, rot:false, r: game.runners[0], top: SAFE_T, bot: SAFE_B }]; }
 // fundo fixo da fase: tijolos, chão e espinhos
 function bake(L){
   if (L._bake) return L._bake;
@@ -1432,7 +1419,6 @@ function render(){
       drawWorld(vp); drawHUD(vp);
       bg.restore();
     }
-    if (vps.length > 1){ bg.fillStyle = P.gold; bg.fillRect(0, vps[0].y - 1, BW, 2); }
   }
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(buf, 0, 0, BW * K, BH * K);
@@ -1570,10 +1556,9 @@ addEventListener('keydown', e => {
   if (game.phase !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === 'Escape' || e.key === 'p'){ openPause(); return; }
   if (game.countdown > 0) return;
-  const K1 = { ArrowUp:0, ArrowRight:1, ArrowDown:2, ArrowLeft:3 }, K2 = { w:0, d:1, s:2, a:3, W:0, D:1, S:2, A:3 };
-  const r1 = game.runners[0], r2 = game.runners[1];
-  if (e.key in K1){ e.preventDefault(); r1 && r1.swipe(K1[e.key]); }
-  else if (e.key in K2){ const r = r2 || r1; if (r){ e.preventDefault(); r.swipe(r2 ? (K2[e.key] + 2) % 4 : K2[e.key]); } }
+  const KEYS = { ArrowUp:0, ArrowRight:1, ArrowDown:2, ArrowLeft:3, w:0, d:1, s:2, a:3, W:0, D:1, S:2, A:3 };
+  const r1 = game.runners[0];
+  if (e.key in KEYS && r1){ e.preventDefault(); r1.swipe(KEYS[e.key]); }
 });
 function openPause(){
   if (game.phase !== 'play') return;
@@ -1648,7 +1633,6 @@ $('#btPlay').addEventListener('click', () => { sfx('start'); show('scrMenu'); re
 $('#btToTitle').addEventListener('click', () => show('scrTitle'));
 $('#btSolo').addEventListener('click', () => { renderWorlds(); show('scrSolo'); });
 for (const b of document.querySelectorAll('[data-back]')) b.addEventListener('click', () => { show('scrMenu'); refreshMenu(); });
-$('#btLocal').addEventListener('click', startLocal);
 $('#btCreate').addEventListener('click', () => createOnline());
 $('#btJoin').addEventListener('click', () => joinOnline($('#inCode').value));
 $('#inCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinOnline($('#inCode').value); });

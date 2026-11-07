@@ -6,7 +6,7 @@
 |---|---|
 | `icone-play-512.png` | Ícone do app (512×512, PNG 32 bits) |
 | `destaque-1024x500.png` | Recurso gráfico (imagem de destaque) |
-| `tela-1` a `tela-6` (1080×1920) | Capturas de tela do celular (mínimo 2) |
+| `tela-1` a `tela-5` (1080×1920) | Capturas de tela do celular (mínimo 2) |
 
 ## Textos da ficha (sugestão)
 
@@ -23,7 +23,7 @@ Deslize o dedo e o bonequinho dispara até bater na parede. Ache a porta dourada
 - Pegue 80% dos pontinhos para abrir a porta de cada fase
 - Novo modo Ultra Labirinto: labirinto gigante inteiro na tela, sozinho ou com amigos
 - Desafio: quem zerar as 100 fases com pelo menos 90% dos pontinhos ganha R$ 50 (regras dentro do jogo)
-- Jogue sozinho, a 2 no mesmo celular (tela dividida) ou numa sala online com até 6 amigos
+- Jogue sozinho ou numa sala online com até 6 amigos, no modo Clássico ou no Ultra Labirinto
 - Salas com código de 4 letras: mande o convite no WhatsApp e jogue na hora
 - Modo sozinho funciona sem internet
 - Sem cadastro, sem anúncios
