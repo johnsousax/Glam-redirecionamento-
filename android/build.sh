@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Gera jogo/fuga-neon.apk sem Android SDK.
+# Gera jogo/pixel-fuga.apk sem Android SDK.
+# Obs.: o nome do arquivo da chave (fuga-neon.p12) e o pacote com.fuganeon.app são do início do projeto
+# e não podem mudar, senão o app novo não instala por cima do antigo.
 # Precisa de: JDK 11+, python3 com Pillow, e em android/tools/: android.jar (com.google.android:android:4.1.1.4),
 # dx.jar (com.jakewharton.android.repackaged:dalvik-dx:9.0.0_r3) e apksig.jar (com.android.tools.build:apksig:2.3.0),
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-6}
-VERSION_NAME=${VERSION_NAME:-1.5}
+VERSION_CODE=${VERSION_CODE:-7}
+VERSION_NAME=${VERSION_NAME:-1.6}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
 KS_PASS=${KS_PASS:-fuganeon}
 M=https://repo1.maven.org/maven2
@@ -28,7 +30,7 @@ python3 build_apk.py build/classes.dex build/icon.png build/assets build/unsigne
 # 5) chave de assinatura (mantenha a mesma para as atualizações instalarem por cima)
 if [ ! -f "$KEYSTORE" ]; then
   keytool -genkeypair -storetype PKCS12 -keystore "$KEYSTORE" -storepass "$KS_PASS" -alias fuganeon -keyalg RSA -keysize 2048 \
-    -validity 10000 -dname "CN=Fuga Neon, O=Fuga Neon, C=BR" >/dev/null 2>&1
+    -validity 10000 -dname "CN=Pixel Fuga, O=Pixel Fuga, C=BR" >/dev/null 2>&1
 fi
 javac -nowarn -cp tools/apksig.jar -d build/signer tools/Sign.java
 java --add-exports java.base/sun.security.x509=ALL-UNNAMED --add-exports java.base/sun.security.pkcs=ALL-UNNAMED --add-exports java.base/sun.security.util=ALL-UNNAMED -cp tools/apksig.jar:build/signer Sign "$KEYSTORE" "$KS_PASS" fuganeon build/unsigned.apk ../jogo/pixel-fuga.apk

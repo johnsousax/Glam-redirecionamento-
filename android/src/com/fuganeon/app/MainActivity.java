@@ -84,6 +84,8 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        String u = web.getUrl();
+        if (u != null && !u.contains("index.html") && !u.endsWith(".app/") && !u.contains("/?") && web.canGoBack()) { web.goBack(); return; }
         web.loadUrl("javascript:void((window.__fneonBack&&window.__fneonBack())||AndroidApp.exit())");
     }
 
