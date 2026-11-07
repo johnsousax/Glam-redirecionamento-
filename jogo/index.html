@@ -141,6 +141,12 @@ details summary{font-family:var(--pixel);font-size:10px;color:var(--gold);cursor
 details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .rules{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:19px;color:var(--muted)}
 .rules b{color:var(--cream);font-weight:400}
+.prizeHead{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;box-shadow:none;padding:2px 0;font-size:13px;color:var(--gold);text-align:left}
+.prizeHead:active{transform:none;box-shadow:none}
+.prizeHead .chev{display:inline-block;transition:transform .15s steps(2)}
+.prizeHead[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pzbody{display:flex;flex-direction:column;gap:12px}
+.levels button.perfect{background:var(--lime);color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.press{animation:none}button:active,a.btn:active{transform:none}}
 </style>
 </head>
@@ -154,7 +160,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
-    <p class="ver">v1.4 · 60 fases · 10 perigos</p>
+    <p class="ver">v1.5 · 100 fases · 15 perigos</p>
   </div>
 </section>
 
@@ -163,19 +169,21 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
   <div class="wrap">
     <h1 class="logo">PIXEL<br><span>FUGA</span></h1>
     <div class="card prize" id="prizeCard">
-      <h3>Desafio R$ 50</h3>
-      <p class="note">Zere as <b>60 fases</b> no modo sozinho e ganhe <b>R$ 50 no Pix</b>.</p>
-      <div class="bar" role="progressbar" aria-label="Fases concluídas" aria-valuemin="0" aria-valuemax="60" id="pzBarBox"><i id="pzBar"></i></div>
-      <p class="note" id="pzProg">0 de 60 fases concluídas</p>
-      <button class="main" id="btClaim" hidden>Resgatar prêmio</button>
-      <details><summary>Regras do desafio</summary>
+      <button class="prizeHead" id="pzToggle" aria-expanded="false" aria-controls="pzBody"><span>Desafio R$ 50</span><span class="chev" aria-hidden="true">▼</span></button>
+      <p class="note" id="pzShort">Zere as 100 fases com 100% dos pontinhos e ganhe R$ 50. Toque para ver.</p>
+      <div id="pzBody" class="pzbody" hidden>
+        <p class="note">Termine as <b>100 fases</b> no modo sozinho pegando <b>todos os pontinhos</b> de cada uma e ganhe <b>R$ 50 no Pix</b>.</p>
+        <div class="bar" role="progressbar" aria-label="Fases com 100%" aria-valuemin="0" aria-valuemax="100" id="pzBarBox"><i id="pzBar"></i></div>
+        <p class="note" id="pzProg">0 de 100 fases com 100%</p>
+        <button class="main" id="btClaim" hidden>Resgatar prêmio</button>
+        <h3>Regras</h3>
         <ul class="rules">
-          <li>Vale só o modo <b>Jogar sozinho</b>, com as 60 fases terminadas no mesmo aparelho, a partir da versão 1.4.</li>
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com 100% dos pontinhos</b>, a partir da versão 1.5.</li>
           <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
           <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
           <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
         </ul>
-      </details>
+      </div>
     </div>
     <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="nickname" placeholder="Como te chamam?"></label>
     <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
@@ -193,13 +201,22 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
       </div>
       <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
-    <div class="card">
-      <h3>Como jogar</h3>
-      <p class="note">Deslize o dedo. Você dispara e só para quando bate numa parede. Ache a <b>porta dourada</b> no alto do labirinto.</p>
-      <div class="how" id="legend"></div>
-    </div>
+    <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 15 perigos</small></button>
     <button class="ghost" id="btToTitle">Tela inicial</button>
     <a class="by" href="politica-de-privacidade.html">Política de privacidade</a>
+  </div>
+</section>
+
+<!-- COMO JOGAR -->
+<section class="screen" id="scrHow" hidden>
+  <div class="wrap">
+    <h2>Como jogar</h2>
+    <div class="card"><h3>Controles</h3><p class="note">Deslize o dedo para cima, para baixo, para a esquerda ou para a direita. O bonequinho dispara e só para quando bate numa parede. No computador, use as setas do teclado.</p></div>
+    <div class="card"><h3>Objetivo</h3><p class="note">Ache a <b>porta dourada</b> no alto do labirinto. No modo sozinho, a porta fica <b>trancada até você pegar 80% dos pontinhos</b>; o canto de cima da tela mostra quanto você já pegou. Pegando <b>100%</b>, a fase conta para o Desafio R$ 50.</p></div>
+    <div class="card"><h3>Botões</h3><p class="note">O botão de pausa fica no canto de cima à esquerda. O botão de recomeçar (à direita) te leva de volta para o início da fase, e os pontinhos que você já pegou continuam valendo.</p></div>
+    <div class="card"><h3>Os 15 perigos</h3><div class="how" id="legend"></div></div>
+    <div class="card"><h3>Jogar com amigos</h3><p class="note"><b>2 no mesmo celular:</b> tela dividida, cada um desliza na sua metade. <b>Sala online:</b> crie a sala e mande o convite pelo WhatsApp. Com 2 jogadores, ganha quem chegar primeiro; com 3 ou mais, a rodada acaba quando o penúltimo chega. Cada rodada tem tempo máximo e, se ninguém chegar, ela não conta.</p></div>
+    <button class="ghost" data-back>Voltar</button>
   </div>
 </section>
 
@@ -207,7 +224,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <section class="screen" id="scrSolo" hidden>
   <div class="wrap">
     <h2>Escolha a fase</h2>
-    <p class="note">São 6 mundos com 10 fases cada. Cada mundo traz perigos novos. Termine uma fase para abrir a próxima.</p>
+    <p class="note">São 10 mundos com 10 fases cada. Cada mundo traz perigos novos. Pegue pelo menos 80% dos pontinhos para a porta abrir e liberar a próxima fase. Fases verdes foram feitas com 100%.</p>
     <div id="worlds" style="display:flex;flex-direction:column;gap:16px"></div>
     <button class="ghost" data-back>Voltar</button>
   </div>
@@ -219,7 +236,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <div class="card" id="codeCard">
       <h3 class="center">Código da sala</h3>
       <div class="codebox" id="lbCode">----</div>
-      <div class="row"><button class="grow small" id="btCopy">Copiar convite</button><button class="grow small" id="btShare">Compartilhar</button></div>
+      <div class="row"><button class="grow small" id="btCopy">Copiar convite</button><a class="btn grow small" id="btShare" href="#" target="_blank" rel="noopener">Enviar no WhatsApp</a></div>
       <p class="note center">Os outros abrem o jogo, digitam esse código e entram. Funciona no mesmo Wi-Fi, no roteador do celular ou pela internet.</p>
     </div>
     <div class="card">
@@ -229,7 +246,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <div class="card" id="roundsCard">
       <h3>Rodadas</h3>
       <div class="seg" id="segRounds"><button data-r="3">3</button><button data-r="5">5</button><button data-r="7">7</button></div>
-      <p class="note">Cada rodada é um labirinto novo e maior que o anterior. Quem chega primeiro ganha mais pontos.</p>
+      <p class="note">Cada rodada é um labirinto novo e maior que o anterior, com tempo máximo. Com 2 jogadores, a rodada acaba quando o primeiro chega; com 3 ou mais, quando o penúltimo chega. Se o tempo acabar sem ninguém chegar, a rodada não conta.</p>
     </div>
     <div class="card bet" id="betCard"></div>
     <button class="main" id="btStart">Começar partida</button>
@@ -276,7 +293,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <section class="screen over" id="scrPrize" hidden>
   <div class="wrap">
     <h3 class="center">Desafio Pixel Fuga</h3>
-    <div class="winner">VOCÊ ZEROU AS 60 FASES!</div>
+    <div class="winner">VOCÊ ZEROU AS 100 FASES COM 100%!</div>
     <div class="card prize">
       <div class="prizeval">R$ 50</div>
       <p class="note center">Você ganhou o desafio! Mande a mensagem para o criador do jogo no WhatsApp para receber o prêmio.</p>
@@ -287,7 +304,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <p class="note">Número: <b>(98) 97005-0096</b>. Se o WhatsApp não abrir, mande seu nome e o código <b id="pzCode2">----</b> para esse número.</p>
     <details class="card"><summary>Regras do desafio</summary>
       <ul class="rules">
-          <li>Vale só o modo <b>Jogar sozinho</b>, com as 60 fases terminadas no mesmo aparelho, a partir da versão 1.4.</li>
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com 100% dos pontinhos</b>, a partir da versão 1.5.</li>
           <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
           <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
           <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
@@ -344,7 +361,7 @@ function h(tag, attrs, ...kids){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
+const SCREENS = ['scrTitle','scrMenu','scrHow','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -369,6 +386,8 @@ function sfx(kind){
     if (kind === 'die'){ tone(392, 98, .35, 'square', .07); return tone(196, 49, .4, 'triangle', .07, .05); }
     if (kind === 'tele'){ tone(300, 1200, .12, 'square', .04); return tone(1200, 300, .12, 'square', .03, .1); }
     if (kind === 'arrow') return tone(660, 990, .05, 'square', .03);
+    if (kind === 'zap'){ tone(1800, 120, .25, 'sawtooth', .05); return tone(90, 40, .3, 'square', .05, .05); }
+    if (kind === 'lock') return tone(220, 180, .12, 'square', .05);
     if (kind === 'tick') return tone(523, 523, .08, 'square', .05);
     if (kind === 'go') return tone(1046, 1046, .2, 'square', .05);
     if (kind === 'win'){ [523, 659, 784, 1046].forEach((f, i) => tone(f, f, .12, 'square', .05, i * .09)); return; }
@@ -397,7 +416,7 @@ const GLYPH = {};
     9:'01110100011000101111000010001001100', '.':'00000000000000000000000000110001100', ':':'00000011000110000000011000110000000',
     '/':'00001000100001000100010000100010000', '!':'00100001000010000100001000000000100', '?':'01110100010000100010001000000000100',
     '-':'00000000000000011111000000000000000', '+':'00000001000010011111001000010000000', 'º':'01100100100110000000111100000000000',
-    '•':'00000000000111001110011100000000000', ' ':'00000000000000000000000000000000000',
+    '•':'00000000000111001110011100000000000', '%':'11001110100001000100010000101110011', ' ':'00000000000000000000000000000000000',
   };
   for (const k in src) GLYPH[k] = src[k];
 })();
@@ -461,6 +480,10 @@ const SPR = {
     { k: P.black, b: st === 1 ? P.red : '#7b74a6', w: st === 1 ? '#ffd1d6' : P.cream, f: st === 1 ? '#ffffff' : P.orange }),
   ghost: f => sprite('gh' + f, ['..wwww..', '.wwwwww.', 'wwkwwkww', 'wwkwwkww', 'wwwwwwww', 'wwwwwwww', f ? 'ww.ww.ww' : 'w.ww.ww.', f ? 'w..w..w.' : '.w..w..w'],
     { w: '#e4dcff', k: P.ink }),
+  glue: () => sprite('glue', ['........', '........', '..gggg..', '.gGggGg.', 'gggggggg', '.gggggg.', '..g..g..', '........'], { g: '#5ac24b', G: '#c8ff9a' }),
+  mud: f => sprite('mud' + f, ['........', '........', '.mmmmmm.', 'mm' + (f ? 'M' : 'm') + 'mmmmm', 'mmmmm' + (f ? 'm' : 'M') + 'mm', '.mmmmmm.', '........', '........'], { m: '#5a3a1e', M: '#a07a48' }),
+  conf: f => sprite('cf' + f, ['.pppppp.', 'pp.qq.pp', 'p.q..q.p', 'p....q.p', 'p...q..p', 'p......p', 'pp.q..pp', '.pppppp.'], { p: f ? '#7a5fd1' : '#9b84ff', q: P.pink }),
+  nozzle: () => sprite('noz', ['........', '.kkkkkk.', '.kggggk.', '.kgoogk.', '.kgoogk.', '.kggggk.', '.kkkkkk.', '........'], { k: P.black, g: P.dgray, o: P.orange }),
   pause: () => sprite('ps', ['.......', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.......'], { k: P.cream }),
   restart: () => sprite('rst', ['..kkk..', '.k...kk', 'k....kk', 'k......', 'k.....k', '.k...k.', '..kkk..'], { k: P.cream }),
 };
@@ -477,6 +500,10 @@ const WORLDS = [
   { name:'Fornalha',           wall:'#a3322b', hi:'#ff9a3e', lo:'#4d1412', floor:'#150808', speck:'#351311', news:'A maré de plasma sobe atrás de você' },
   { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Bombas, e tudo junto mais rápido' },
   { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Escuridão e o fantasma caçador' },
+  { name:'Pântano',            wall:'#4f6b2a', hi:'#a8d45a', lo:'#24331a', floor:'#0b110a', speck:'#1c2a14', news:'Lama que te deixa lento e cola que te prende' },
+  { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lança-chamas' },
+  { name:'Laboratório',        wall:'#8f88b0', hi:'#ffffff', lo:'#4a4468', floor:'#13111d', speck:'#24203a', news:'Poção da confusão: os controles invertem' },
+  { name:'Tempestade',         wall:'#3c4a6e', hi:'#ffe066', lo:'#1a2238', floor:'#080a14', speck:'#1a2036', news:'Raios, o fantasma volta e tudo junto' },
 ];
 const worldIdx = idx => Math.floor((idx - 1) / 10) % WORLDS.length;
 
@@ -495,11 +522,13 @@ function slide(L, pos, d, deadly){
     const tp = L.tele[n];
     if (tp >= 0){ x = tp % w; y = (tp / w) | 0; path.push(tp); steps.push({ t: tp, d, tp: true }); }
     const ar = L.arrow[n]; if (ar) d = ar - 1;
+    if (L.glue[n]) break;
   }
   return { end: y * w + x, path, steps };
 }
 // explora todas as posições de parada alcançáveis
-function analyze(L, deadly){
+// exitStops: a porta (trancada no modo sozinho) é um lugar onde se para e de onde se sai de novo
+function analyze(L, deadly, exitStops = true){
   const seen = new Map([[L.start, 0]]), q = [L.start], edges = new Map(), trav = new Map(), axis = new Map(), exitFrom = []; let loops = 0;
   for (let qi = 0; qi < q.length; qi++){
     const s = q[qi], dep = seen.get(s), out = [];
@@ -508,7 +537,7 @@ function analyze(L, deadly){
       if (r.loop){ loops++; continue; }
       if (!r.path.length || r.dead) continue;
       for (const st of r.steps){ if (!trav.has(st.t)) trav.set(st.t, dep + 1); axis.set(st.t, (axis.get(st.t) || 0) | (st.d % 2 ? 1 : 2)); }
-      if (r.exit){ exitFrom.push(s); continue; }
+      if (r.exit){ exitFrom.push(s); if (!exitStops) continue; }
       out.push(r.end);
       if (!seen.has(r.end)){ seen.set(r.end, dep + 1); q.push(r.end); }
     }
@@ -559,6 +588,7 @@ function genLevel(idx, seed){
     const start = (h - 2) * w + 2 * sx + 1;
     const L = { idx, seed, w, h, grid, start, exit:-1, spikes:new Uint8Array(w * h), dots:new Uint8Array(w * h), arrow:new Uint8Array(w * h),
       tele:new Int32Array(w * h).fill(-1), pairs:[], lasers:[], laserAt:new Map(), rspikes:[], rsAt:new Map(), drones:[], bombs:[], ghost:null, dark:false,
+      glue:new Uint8Array(w * h), mud:new Uint8Array(w * h), conf:new Uint8Array(w * h), flames:[], flameAt:new Map(), storm:null,
       theme: WORLDS[worldIdx(idx)], tideSpeed:0, tideDelay:6 };
     let an = analyze(L, false);
     // saída: entre os pontos mais altos, o mais longe do início
@@ -575,10 +605,11 @@ function genLevel(idx, seed){
     // o labirinto precisa ser quase todo alcançável deslizando
     let floorN = 0; for (const v of grid) if (!v) floorN++;
     if (an.trav.size < floorN * Math.max(0.45, 0.72 - attempt * 0.004)) continue;
+    if (analyze(L, true, false).trav.size < floorN * Math.max(0.42, 0.66 - attempt * 0.004)) continue; // a porta não pode esconder metade do mapa
     const base = an.trav.size;
     // cada obstáculo novo não pode fechar pedaços do labirinto (senão some o espaço para se perder)
     const valid = a => a.exitFrom.length > 0 && !a.loops && a.trav.size >= base * 0.95 && (!clean0 || noTraps(a));
-    const special = t => t === start || t === L.exit || L.arrow[t] || L.tele[t] >= 0 || L.spikes[t];
+    const special = t => t === start || t === L.exit || L.arrow[t] || L.tele[t] >= 0 || L.spikes[t] || L.glue[t];
     // setas (a partir da fase 6)
     const nAr = idx < 6 ? 0 : Math.min(1 + Math.floor((idx - 6) / 3), 8);
     let tries = 0;
@@ -595,6 +626,17 @@ function genLevel(idx, seed){
         if (valid(a2)){ an = a2; break; }
         L.arrow[t] = 0;
       }
+    }
+    // cola (a partir da fase 61): para o deslize na hora
+    const nGl = idx < 61 ? 0 : Math.min(2 + Math.floor((idx - 61) / 3), 8);
+    tries = 0;
+    for (const t of shuffle([...an.trav.keys()], R)){
+      if (L.glue.reduce((a, b) => a + b, 0) >= nGl || tries > 40) break;
+      if (an.seen.has(t) || special(t)) continue;
+      tries++;
+      L.glue[t] = 1;
+      const a2 = analyze(L, true);
+      if (valid(a2)) an = a2; else L.glue[t] = 0;
     }
     // portais (a partir da fase 13)
     const nTp = idx < 13 ? 0 : Math.min(1 + Math.floor((idx - 13) / 8), 3);
@@ -627,6 +669,26 @@ function genLevel(idx, seed){
     const nLa = idx < 11 ? 0 : Math.min(1 + Math.floor((idx - 11) / 2), 10);
     const nRs = idx < 21 ? 0 : Math.min(2 + Math.floor((idx - 21) / 2), 10);
     const nDr = idx < 24 ? 0 : Math.min(1 + Math.floor((idx - 24) / 2), 8);
+    // lança-chamas (a partir da fase 71): bocal na parede solta fogo por até 3 casas
+    const nFl = idx < 71 ? 0 : Math.min(1 + Math.floor((idx - 71) / 2), 8);
+    const sx0 = start % w, sy0 = (start / w) | 0;
+    const flameOk = tt => an.trav.has(tt) && !special(tt) && !used[tt] && Math.abs(tt % w - sx0) + Math.abs(((tt / w) | 0) - sy0) >= 4;
+    for (const t of shuffle([...an.trav.keys()], R)){
+      if (L.flames.length >= nFl) break;
+      if (!flameOk(t)) continue;
+      const cx = t % w, cy = (t / w) | 0;
+      for (const d of shuffle([0, 1, 2, 3], R)){
+        const ex = cx - DIRS[d][0], ey = cy - DIRS[d][1];
+        if (ex < 0 || ey < 0 || ex >= w || ey >= h || grid[ey * w + ex] !== WALL) continue;
+        const tiles = [];
+        for (let k = 0; k < 3; k++){ const tx = cx + DIRS[d][0] * k, ty = cy + DIRS[d][1] * k, tt = ty * w + tx;
+          if (tx < 0 || ty < 0 || tx >= w || ty >= h || grid[tt] === WALL || !flameOk(tt)) break; tiles.push(tt); }
+        if (tiles.length < 2) continue;
+        const f = { ex, ey, d, tiles, period: 2.4 + R() * 0.8, on: 0.36, phase: R() * 3 };
+        for (const tt of tiles){ used[tt] = 1; L.flameAt.set(tt, f); }
+        L.flames.push(f); break;
+      }
+    }
     for (const t of pool){
       if (L.lasers.length >= nLa) break;
       const ax = an.axis.get(t); if (ax === 3 || used[t]) continue;
@@ -663,9 +725,20 @@ function genLevel(idx, seed){
       L.bombs.push({ t, x: bx, y: by, period: 3 + R() * 1.4, phase: R() * 4 });
     }
     if (idx >= 31 && idx <= 50) L.tideSpeed = 0.22 + Math.min(idx - 31, 30) * 0.009;
-    // fantasma caçador e escuridão (a partir da fase 51)
-    if (idx >= 51){ L.ghost = { sx: 1, sy: 1, speed: 0.8 + Math.min(idx - 51, 20) * 0.03, delay: 4 }; L.dark = true; }
-    for (const t of an.trav.keys()) if (t !== L.exit && !L.spikes[t] && L.tele[t] < 0 && !L.arrow[t]) L.dots[t] = 1;
+    // fantasma caçador (51-60 e 91-100) e escuridão (51-60)
+    if ((idx >= 51 && idx <= 60) || idx >= 91) L.ghost = { sx: 1, sy: 1, speed: 0.8 + Math.min(idx >= 91 ? idx - 91 : idx - 51, 9) * 0.04, delay: 4 };
+    if (idx >= 51 && idx <= 60) L.dark = true;
+    // raios (a partir da fase 91): caem perto de você depois de um aviso
+    if (idx >= 91) L.storm = { every: 3.6 - Math.min(idx - 91, 9) * 0.15, warn: 1.1 };
+    // lama (61+) e poção da confusão (81+): não mudam o caminho, só o jeito de andar
+    const rest = shuffle([...an.trav.keys()].filter(t => !special(t) && !used[t]), R);
+    const nMud = idx < 61 ? 0 : Math.min(4 + (idx - 61), 16), nCf = idx < 81 ? 0 : Math.min(2 + Math.floor((idx - 81) / 3), 6);
+    let mi = 0;
+    for (; mi < rest.length && mi < nMud; mi++){ L.mud[rest[mi]] = 1; used[rest[mi]] = 1; }
+    for (let k = 0; k < nCf && mi < rest.length; k++, mi++){ L.conf[rest[mi]] = 1; used[rest[mi]] = 1; }
+    const anDots = analyze(L, true, false);
+    if (anDots.trav.size < floorN * 0.4 && attempt < 70) continue;
+    for (const t of anDots.trav.keys()) if (t !== L.exit && !L.spikes[t] && L.tele[t] < 0 && !L.arrow[t]) L.dots[t] = 1;
     L.dots[start] = 0;
     L.totalDots = L.dots.reduce((a, b) => a + b, 0);
     if (clean0){ genCache.set(key, L); return L; }
@@ -690,16 +763,19 @@ class Runner {
     this.L = L; this.id = id; this.name = name; this.color = color;
     this.got = new Uint8Array(L.w * L.h); this.dots = 0; this.deaths = 0; this.finished = false; this.time = 0;
     this.trail = []; this.face = 0; this.squash = 0; this.camX = null; this.camY = null; this.place = 0;
+    this.need = game.mode === 'solo' ? Math.ceil(L.totalDots * 0.8) : 0; this.lockMsg = 0; this.confT = 0;
     this.respawn();
   }
   respawn(){
     const L = this.L; this.pos = L.start; this.x = L.start % L.w; this.y = (L.start / L.w) | 0;
     this.moving = null; this.queued = null; this.dead = 0; this.tide = L.h + 2; this.tideT = 0; this.trail.length = 0; this.spawnFx = 1;
     if (L.ghost){ this.gx = L.ghost.sx; this.gy = L.ghost.sy; this.gT = 0; }
+    this.strikes = []; this.stormT = 0; this.confT = 0;
   }
+  locked(){ return this.need > 0 && this.dots < this.need; }
   swipe(d){
-    this.swiped = true;
     if (this.finished || this.dead > 0) return;
+    if (this.confT > 0) d = (d + 2) % 4;
     if (this.moving){ this.queued = d; return; }
     this.go(d);
   }
@@ -720,8 +796,16 @@ class Runner {
     if (L.dots[t] && !this.got[t]){ this.got[t] = 1; this.dots++; sfx('dot'); }
     if (st.tp){ burst(this.x, this.y, P.mint, 10); sfx('tele'); }
     if (L.arrow[t]) sfx('arrow');
-    const hit = L.spikes[t] || (L.laserAt.has(t) && timedOn(L.laserAt.get(t), game.clock)) || (L.rsAt.has(t) && timedOn(L.rsAt.get(t), game.clock));
+    if (L.conf[t]){ if (this.confT <= 0) sfx('tele'); this.confT = 6; }
+    const hit = L.spikes[t] || (L.laserAt.has(t) && timedOn(L.laserAt.get(t), game.clock)) || (L.rsAt.has(t) && timedOn(L.rsAt.get(t), game.clock))
+      || (L.flameAt.has(t) && timedOn(L.flameAt.get(t), game.clock));
     if (hit){ this.x = t % L.w; this.y = (t / L.w) | 0; this.kill(); return true; }
+    if (t === L.exit && this.locked()){
+      // porta trancada: para aqui e avisa quantos pontinhos faltam
+      this.x = t % L.w; this.y = (t / L.w) | 0; this.pos = t; this.moving = null; this.squash = 1; this.lockMsg = 2.2; sfx('lock'); buzz(25);
+      if (this.queued != null){ const q = this.queued; this.queued = null; this.go(q); }
+      return true;
+    }
     if (t === L.exit){
       this.x = t % L.w; this.y = (t / L.w) | 0; this.moving = null; this.finished = true;
       burst(this.x, this.y, P.gold, 36); burst(this.x, this.y, P.cream, 12); sfx('win'); buzz([30, 40, 30]);
@@ -735,11 +819,13 @@ class Runner {
     this.spawnFx = Math.max(0, (this.spawnFx || 0) - dt * 2);
     if (this.finished) return;
     this.time += dt;
+    this.lockMsg = Math.max(0, this.lockMsg - dt); this.confT = Math.max(0, this.confT - dt);
     if (this.dead > 0){ this.dead -= dt; if (this.dead <= 0) this.respawn(); return; }
     const L = this.L;
     if (this.moving){
       const m = this.moving, n = m.steps.length, old = m.prog;
-      m.prog = Math.min(n, m.prog + SPEED * dt);
+      const cur = m.steps[Math.min(n - 1, Math.floor(m.prog))].t;
+      m.prog = Math.min(n, m.prog + SPEED * (L.mud[cur] ? 0.33 : 1) * dt);
       for (let k = Math.floor(old); k < Math.floor(m.prog); k++) if (this.reach(m.steps[k])) return;
       const k = Math.floor(m.prog);
       if (k >= n){
@@ -755,10 +841,31 @@ class Runner {
       this.trail.push([this.x, this.y]); if (this.trail.length > 6) this.trail.shift();
     } else if (this.trail.length) this.trail.shift();
     for (const dr of L.drones){ const [ex, ey] = dronePos(dr, game.clock); if (Math.abs(ex - this.x) < 0.62 && Math.abs(ey - this.y) < 0.62){ this.kill(); return; } }
+    if (L.flames.length){ const ft = Math.round(this.y) * L.w + Math.round(this.x), f = L.flameAt.get(ft);
+      if (f && timedOn(f, game.clock) && Math.abs(this.x - Math.round(this.x)) < .4 && Math.abs(this.y - Math.round(this.y)) < .4){ this.kill(); return; } }
     for (const b of L.bombs){
       if (bombState(b, game.clock) !== 2) continue;
       const dx = Math.abs(b.x - this.x), dy = Math.abs(b.y - this.y);
       if ((dx < .6 && dy < 1.6) || (dy < .6 && dx < 1.6)){ this.kill(); return; }
+    }
+    if (L.storm){
+      this.stormT += dt;
+      if (this.stormT >= L.storm.every){
+        this.stormT = 0;
+        const px = Math.round(this.x), py = Math.round(this.y), opts = [];
+        for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++){
+          const x = px + dx, y = py + dy; if (Math.abs(dx) + Math.abs(dy) > 4 || x < 0 || y < 0 || x >= L.w || y >= L.h) continue;
+          const t = y * L.w + x; if (L.grid[t] !== WALL && t !== L.exit && t !== L.start) opts.push([x, y]);
+        }
+        const pick = Math.random() < .35 ? [px, py] : opts[Math.floor(Math.random() * opts.length)];
+        if (pick) this.strikes.push({ x: pick[0], y: pick[1], warn: L.storm.warn, boom: 0 });
+      }
+      for (const s of this.strikes){
+        if (s.warn > 0){ s.warn -= dt; if (s.warn <= 0){ s.boom = .3; sfx('zap');
+          if (Math.abs(s.x - this.x) < .6 && Math.abs(s.y - this.y) < .6){ this.kill(); return; } } }
+        else s.boom -= dt;
+      }
+      this.strikes = this.strikes.filter(s => s.warn > 0 || s.boom > 0);
     }
     if (L.ghost){
       this.gT += dt;
@@ -829,22 +936,24 @@ class Room {
     this.sync(); this.nextRound();
   }
   nextRound(){
-    this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play';
-    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx: Math.min(55, 3 + (this.round - 1) * 8), seed: (this.seed + this.round * 977) >>> 0 });
-    clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 243000);
+    this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play'; this.ending = false;
+    // cada rodada tem tempo máximo; labirintos maiores ganham mais tempo
+    const idx = Math.min(95, 3 + (this.round - 1) * 14), limit = Math.round(Math.min(270, 120 + idx * 1.5));
+    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed: (this.seed + this.round * 977) >>> 0 });
+    clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), (3.2 + limit) * 1000 + 600);
   }
   finish(id, m){
     if (this.phase !== 'play' || this.fin.some(f => f.id === id)) return;
     this.fin.push({ id, time: Math.max(0, +m.time || 0), dots: m.g | 0 });
-    const place = this.fin.length; let deadline = null;
-    if (place === 1){ deadline = 40; clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 40000); }
-    this.out(null, { t:'finished', id, place, time: +m.time || 0, deadline });
+    this.out(null, { t:'finished', id, place: this.fin.length, time: +m.time || 0 });
     this.checkAllDone();
   }
+  // 2 jogadores: acaba quando o primeiro chega. 3 ou mais: acaba quando o penúltimo chega.
   checkAllDone(){
-    if (this.phase !== 'play' || !this.fin) return;
-    const active = this.players.filter(p => p.on);
-    if (active.every(p => this.fin.some(f => f.id === p.id))){ clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 1400); }
+    if (this.phase !== 'play' || !this.fin || this.ending) return;
+    const active = this.players.filter(p => p.on), done = this.fin.filter(f => active.some(p => p.id === f.id)).length;
+    const needed = active.length <= 2 ? 1 : active.length - 1;
+    if (done > 0 && done >= needed){ this.ending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 1400); }
   }
   ranking(){
     return this.players.map(p => ({ id: p.id, ...this.totals[p.id] })).sort((a, b) => b.pts - a.pts || b.wins - a.wins || a.time - b.time || b.dots - a.dots);
@@ -852,15 +961,15 @@ class Room {
   endRound(){
     if (this.phase !== 'play') return;
     clearTimeout(this.timer);
-    const n = this.players.length;
+    const n = this.players.length, isVoid = this.fin.length === 0; // ninguém chegou no tempo: a rodada não conta
     const results = this.players.map(p => {
       const i = this.fin.findIndex(f => f.id === p.id), f = this.fin[i];
       const pts = i >= 0 ? n - i : 0, T = this.totals[p.id];
-      T.pts += pts; if (i === 0) T.wins++; T.time += f ? f.time : 250; T.dots += f ? f.dots : (this.lastDots[p.id] || 0);
+      if (!isVoid){ T.pts += pts; if (i === 0) T.wins++; T.time += f ? f.time : 300; T.dots += f ? f.dots : (this.lastDots[p.id] || 0); }
       return { id: p.id, place: i >= 0 ? i + 1 : 0, time: f ? f.time : null, pts };
     }).sort((a, b) => (a.place || 99) - (b.place || 99));
     const last = this.round >= this.rounds;
-    this.out(null, { t:'roundEnd', round: this.round, rounds: this.rounds, results, totals: this.ranking(), last });
+    this.out(null, { t:'roundEnd', round: this.round, rounds: this.rounds, results, totals: this.ranking(), last, void: isVoid });
     if (last){ this.phase = 'final'; this.timer = setTimeout(() => this.final(), 3800); }
     else { this.phase = 'inter'; this.timer = setTimeout(() => this.nextRound(), 4800); }
   }
@@ -1006,7 +1115,6 @@ function onMsg(m){
     case 'finished': {
       const r = game.runners.find(r => r.id === m.id); if (r) r.place = m.place;
       const g = game.ghosts[m.id]; if (g){ g.fin = 1; g.place = m.place; }
-      if (m.deadline) game.deadline = performance.now() + m.deadline * 1000;
       break; }
     case 'roundEnd': showRoundEnd(m); break;
     case 'final': showFinal(m); break;
@@ -1019,6 +1127,7 @@ function startRound(m){
   const L = genLevel(m.idx, m.seed); game.level = L;
   game.runners = game.me.map(id => new Runner(L, id, pname(id), pcolor(id)));
   game.ghosts = {}; game.deadline = null; game.countdown = 3.2; game.clock = 0; parts = [];
+  game.roundEndsAt = performance.now() + (3.2 + (m.limit || 180)) * 1000;
   show(null); sfx('tick');
 }
 function startSolo(n){
@@ -1026,11 +1135,11 @@ function startSolo(n){
   game.mode = 'solo'; game.soloLevel = n; game.me = ['solo']; game.phase = 'play'; game.paused = false;
   const L = genLevel(n, 1000 + n * 13); game.level = L;
   game.runners = [new Runner(L, 'solo', myName(), COLORS[0])];
-  game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; parts = [];
+  game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; game.roundEndsAt = null; parts = [];
   show(null);
 }
 /* ---------- desafio: registro das fases concluídas (com assinatura para dificultar edição manual) ---------- */
-const PRIZE_LEVELS = 60, WA_NUMBER = '5598970050096';
+const PRIZE_LEVELS = 100, WA_NUMBER = '5598970050096';
 function fnv(str){ let h = 0x811c9dc5; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
 const campSig = c => fnv('pxf|' + JSON.stringify(c) + '|60-fases-r$50').toString(36);
 function loadCamp(){
@@ -1039,13 +1148,16 @@ function loadCamp(){
   return c;
 }
 function saveCamp(c){ store.set('camp', c); store.set('campSig', campSig(c)); }
+// guarda o melhor resultado da fase: [tempo, voltas ao início, % de pontinhos]
 function recordLevel(n, r){
   if (r.time < 2) return;
-  const c = loadCamp(), old = c.l[n];
-  if (!old || r.time < old[0]) c.l[n] = [Math.round(r.time * 10) / 10, r.deaths];
+  const c = loadCamp(), old = c.l[n], pct = Math.floor(r.dots / Math.max(1, r.L.totalDots) * 100);
+  const cur = [Math.round(r.time * 10) / 10, r.deaths, pct];
+  if (!old || (old[2] || 0) < pct || ((old[2] || 0) === pct && cur[0] < old[0])) c.l[n] = cur;
   saveCamp(c);
 }
-function campDone(c = loadCamp()){ let k = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]) k++; return k; }
+const perfect = e => !!e && (e[2] || 0) >= 100;
+function campDone(c = loadCamp()){ let k = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (perfect(c.l[i])) k++; return k; }
 function prizeCode(c, name){
   const parts = []; for (let i = 1; i <= PRIZE_LEVELS; i++) parts.push(c.l[i] ? c.l[i].join(':') : '-');
   const a = fnv(name.toLowerCase() + '|' + parts.join(',')).toString(36).toUpperCase().padStart(7, '0'), b = fnv(parts.join(',') + '|pxf').toString(36).toUpperCase().padStart(7, '0');
@@ -1054,7 +1166,7 @@ function prizeCode(c, name){
 function prizeTotals(c){ let t = 0, d = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]){ t += c.l[i][0]; d += c.l[i][1]; } return { t, d }; }
 function updatePrizeLink(){
   const c = loadCamp(), name = clean($('#pzName').value, 30) || myName(), code = prizeCode(c, name), tot = prizeTotals(c);
-  const msg = 'Olá, @jonsousax! Zerei as 60 fases do Pixel Fuga e ganhei o desafio de R$ 50! 🏆\n'
+  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Fuga com 100% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
     + 'Nome: ' + name + '\nTempo somado: ' + fmtTime(tot.t) + '\nVoltas ao início: ' + tot.d + '\nCódigo: ' + code;
   $('#pzWa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
   $('#pzCode2').textContent = code;
@@ -1063,27 +1175,30 @@ function showPrize(){
   const c = loadCamp(); if (campDone(c) < PRIZE_LEVELS) return;
   const tot = prizeTotals(c);
   if (!$('#pzName').value) $('#pzName').value = store.get('name', '') || '';
-  $('#pzStats').replaceChildren(statRow('Fases', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
+  $('#pzStats').replaceChildren(statRow('Fases com 100%', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
   updatePrizeLink(); sfx('win');
   show('scrPrize');
 }
 function refreshPrize(){
   const k = campDone();
   $('#pzBar').style.width = (k / PRIZE_LEVELS * 100) + '%'; $('#pzBarBox').setAttribute('aria-valuenow', k);
-  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases concluídas' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
+  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases com 100%' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
+  $('#pzShort').textContent = k >= PRIZE_LEVELS ? 'Você zerou! Toque para resgatar o prêmio.' : k ? 'Você já tem ' + k + ' de 100 fases com 100%. Toque para ver.' : 'Zere as 100 fases com 100% dos pontinhos e ganhe R$ 50. Toque para ver.';
   $('#btClaim').hidden = k < PRIZE_LEVELS;
 }
 function onRunnerFinish(r){
   if (game.mode === 'solo'){
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
     recordLevel(game.soloLevel, r);
+    const L = game.level, pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
-      if (game.soloLevel === PRIZE_LEVELS && campDone() >= PRIZE_LEVELS){ game.phase = 'solodone'; showPrize(); return; }
       game.phase = 'solodone';
+      if (pct >= 100 && campDone() >= PRIZE_LEVELS && (game.soloLevel === PRIZE_LEVELS || !store.get('prizeSeen', false))){ store.set('prizeSeen', true); showPrize(); return; }
       $('#sdLevel').textContent = 'Fase ' + game.soloLevel;
-      const L = game.level, box = $('#sdStats'); box.replaceChildren(
-        statRow('Tempo', fmtTime(r.time)), statRow('Pontinhos', r.dots + ' de ' + L.totalDots), statRow('Voltas pro início', String(r.deaths)));
+      $('#sdStats').replaceChildren(
+        statRow('Tempo', fmtTime(r.time)), statRow('Pontinhos', r.dots + ' de ' + L.totalDots + ' (' + pct + '%)'), statRow('Voltas pro início', String(r.deaths)),
+        h('p', { class:'note' }, pct >= 100 ? 'PERFEITO! Esta fase já conta para o Desafio R$ 50.' : 'Para esta fase contar no Desafio R$ 50, termine com 100% dos pontinhos.'));
       show('scrSoloDone');
     }, 900);
     return;
@@ -1097,8 +1212,9 @@ function rankRow(pos, id, main, sub, first){
 }
 function showRoundEnd(m){
   game.phase = 'inter';
-  $('#rdTitle').textContent = 'Rodada ' + m.round + ' de ' + m.rounds;
-  $('#rdThis').replaceChildren(...m.results.map(r => rankRow(r.place ? r.place + 'º' : '—', r.id, '+' + r.pts, r.time != null ? fmtTime(r.time) : 'não chegou', r.place === 1)));
+  $('#rdTitle').textContent = 'Rodada ' + m.round + ' de ' + m.rounds + (m.void ? ': não contou' : '');
+  if (m.void) $('#rdThis').replaceChildren(h('p', { class:'note' }, 'O tempo acabou e ninguém chegou na porta. Esta rodada não vale ponto para ninguém.'));
+  else $('#rdThis').replaceChildren(...m.results.map(r => rankRow(r.place ? r.place + 'º' : '—', r.id, '+' + r.pts, r.time != null ? fmtTime(r.time) : 'não chegou', r.place === 1)));
   $('#rdTotal').replaceChildren(...m.totals.map((t, i) => rankRow((i + 1) + 'º', t.id, t.pts + (t.pts === 1 ? ' pt' : ' pts'), null, i === 0)));
   $('#rdNext').textContent = m.last ? 'Calculando o resultado final…' : 'Próximo labirinto já já…';
   show('scrRound');
@@ -1125,6 +1241,7 @@ function showFinal(m){
 /* ============================== lobby ============================== */
 function renderLobby(){
   const lb = game.lobby; if (!lb) return;
+  if (game.code) $('#btShare').href = waInvite();
   $('#codeCard').hidden = game.mode !== 'online';
   $('#lbCode').textContent = game.code || '----';
   // jogadores
@@ -1231,8 +1348,7 @@ function bake(L){
 }
 function drawWorld(vp){
   const g = bg, L = game.level, r = vp.r, T = L.theme, WW = L.w * TS, WH = L.h * TS;
-  // enquanto a dica de deslizar aparece embaixo, o labirinto sobe para o jogador não ficar escondido
-  const bot = vp.bot + Math.round((r.hintA || 0) * 66);
+  const bot = vp.bot;
   const top = HUDH + vp.top, avail = vp.h - top - bot;
   const px = r.x * TS + 4, py = r.y * TS + 4;
   const tx = WW <= vp.w ? -Math.floor((vp.w - WW) / 2) : Math.max(0, Math.min(WW - vp.w, px - vp.w / 2));
@@ -1252,6 +1368,30 @@ function drawWorld(vp){
     if (L.dots[t] && !r.got[t]){ g.fillStyle = P.cream; g.fillRect(X + 3, Y + 3, 2, 2); }
     if (L.arrow[t]) g.drawImage(SPR.arrow(L.arrow[t] - 1, fr % 2), X, Y);
     if (L.tele[t] >= 0) g.drawImage(SPR.tele(L._pairOf.get(t) || 0, fr % 4), X, Y);
+    if (L.mud[t]) g.drawImage(SPR.mud(fr % 2), X, Y);
+    if (L.glue[t]) g.drawImage(SPR.glue(), X, Y);
+    if (L.conf[t]) g.drawImage(SPR.conf(fr % 2), X, Y);
+    if (L.dots[t] && !r.got[t] && (L.mud[t] || L.conf[t])){ g.fillStyle = P.cream; g.fillRect(X + 3, Y + 3, 2, 2); }
+  }
+  // lança-chamas
+  for (const f of L.flames){
+    const EX = ox + f.ex * TS, EY = oy + f.ey * TS;
+    if (EY < -24 || EY > vp.h + 24) continue;
+    g.drawImage(SPR.nozzle(), EX, EY);
+    const on = timedOn(f, game.clock), warn = !on && timedPhase(f, game.clock) > .8;
+    if (on) for (const tt of f.tiles){ const X = ox + (tt % L.w) * TS, Y = oy + ((tt / L.w) | 0) * TS;
+      for (let i = 0; i < 26; i++){ g.fillStyle = [P.gold, P.orange, P.red, '#ffffff'][(i + fr) % 4]; g.fillRect(X + ((i * 29 + fr * 13) % 8), Y + ((i * 47 + fr * 5) % 8), 1, 1); } }
+    else if (warn && fr % 2){ g.fillStyle = P.orange; g.fillRect(EX + 3 + DIRS[f.d][0] * 4, EY + 3 + DIRS[f.d][1] * 4, 2, 2); }
+  }
+  // raios: aviso piscando e depois o raio
+  for (const st of (r.strikes || [])){
+    const X = ox + st.x * TS, Y = oy + st.y * TS;
+    if (st.warn > 0){ if (fr % 2 || st.warn < .4){ g.fillStyle = P.gold; g.fillRect(X, Y, 8, 1); g.fillRect(X, Y + 7, 8, 1); g.fillRect(X, Y, 1, 8); g.fillRect(X + 7, Y, 1, 8); } }
+    else {
+      g.fillStyle = '#ffffff'; g.fillRect(X, Y, 8, 8);
+      g.fillStyle = '#fff6b0'; let bx = X + 4;
+      for (let y = Y + 4; y > -4; y -= 3){ g.fillRect(bx, y - 3, 1, 3); bx += ((y * 7 + fr) % 3) - 1; }
+    }
   }
   // lasers
   for (const la of L.lasers){
@@ -1281,7 +1421,11 @@ function drawWorld(vp){
   }
   // porta de saída
   { const X = ox + (L.exit % L.w) * TS, Y = oy + ((L.exit / L.w) | 0) * TS;
-    g.drawImage(SPR.door(fr % 2), X, Y);
+    if (r.locked && r.locked()){
+      g.globalAlpha = .45; g.drawImage(SPR.door(0), X, Y); g.globalAlpha = 1;
+      g.fillStyle = P.black; g.fillRect(X + 2, Y + 3, 4, 4); g.fillStyle = P.gray; g.fillRect(X + 3, Y + 1, 2, 1); g.fillRect(X + 2, Y + 2, 1, 2); g.fillRect(X + 5, Y + 2, 1, 2);
+      g.fillStyle = P.gold; g.fillRect(X + 3, Y + 4, 2, 2);
+    } else g.drawImage(SPR.door(fr % 2), X, Y);
     g.fillStyle = P.gold; const s = fr % 8; g.fillRect(X + [-2, 9, 4, -1, 8, 2, 10, -3][s], Y + [1, 4, -3, 7, -1, 9, 6, 3][s], 1, 1); }
   // esmagadores
   for (const dr of L.drones){
@@ -1355,9 +1499,13 @@ function drawHUD(vp){
   vp.btnPause = [0, top, 16, top + HUDH]; vp.btnRestart = [vp.w - 16, top, vp.w, top + HUDH];
   const label = game.mode === 'solo' ? 'FASE ' + game.soloLevel : 'RODADA ' + game.roundInfo.round + '/' + game.roundInfo.rounds;
   drawText(g, label, 14, top + 3, T.hi);
-  drawText(g, fmtTime(r.time).replace('s', ''), vp.w - 14, top + 3, P.cream, 1, 'right');
+  if (game.mode === 'solo' || !game.roundEndsAt) drawText(g, fmtTime(r.time).replace('s', ''), vp.w - 14, top + 3, P.cream, 1, 'right');
+  else { const left = Math.max(0, (game.roundEndsAt - performance.now()) / 1000); drawText(g, fmtTime(left).replace('s', ''), vp.w - 14, top + 3, left < 20 && Math.floor(left * 2) % 2 ? P.red : P.gold, 1, 'right'); }
   drawText(g, '•' + r.dots + '/' + L.totalDots, 14, top + 11, P.gold);
-  drawText(g, game.runners.length > 1 ? shortName(r.name) : T.name.split(' ')[0], vp.w - 14, top + 11, P.gray, 1, 'right');
+  if (game.mode === 'solo'){
+    const pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
+    drawText(g, pct + '%', vp.w - 14, top + 11, pct >= 100 ? '#ffffff' : pct >= 80 ? P.lime : P.pink, 1, 'right');
+  } else drawText(g, game.runners.length > 1 ? shortName(r.name) : T.name.split(' ')[0], vp.w - 14, top + 11, P.gray, 1, 'right');
   const cx = Math.round(vp.w / 2), cy = Math.round(vp.h * .4);
   if (game.countdown > 0){
     const n = Math.ceil(game.countdown - .2);
@@ -1368,30 +1516,14 @@ function drawHUD(vp){
     drawText(g, 'ESPERANDO OS OUTROS', cx, cy + 12, P.cream, 1, 'center');
   } else if (r.dead > 0){
     drawText(g, 'DE VOLTA AO INICIO', cx, cy, P.pink, 1, 'center');
+  } else if (r.lockMsg > 0){
+    drawText(g, 'PORTA TRANCADA', cx, cy - 6, P.gold, 1, 'center');
+    drawText(g, 'PEGUE 80% DOS PONTOS', cx, cy + 4, P.cream, 1, 'center');
+    drawText(g, 'FALTAM ' + Math.max(0, r.need - r.dots), cx, cy + 14, P.pink, 1, 'center');
   }
-  if (game.deadline && game.mode !== 'solo'){
-    const left = Math.max(0, (game.deadline - performance.now()) / 1000);
-    drawText(g, 'FIM EM ' + Math.ceil(left) + 'S', cx, top + HUDH + 3, P.gold, 1, 'center');
-  }
-  drawSwipeHint(vp);
-}
-// dica no começo da partida: mãozinha transparente mostrando os 4 movimentos, na parte de baixo da tela
-function drawSwipeHint(vp){
-  const r = vp.r, want = !r.swiped && !r.finished && r.time < 12 ? 1 : 0;
-  r.hintA = r.hintA == null ? want : r.hintA + (want - r.hintA) * Math.min(1, game.dt * 4);
-  if (r.hintA < 0.02) return;
-  const g = bg, A = r.hintA, cx = Math.round(vp.w / 2), cy = vp.h - vp.bot - 38;
-  const T = performance.now() / 1000, d = Math.floor(T / 1.1) % 4, f = (T % 1.1) / 1.1;
-  g.globalAlpha = .4 * A; g.fillStyle = P.ink; g.fillRect(cx - 46, cy - 28, 92, 62);
-  g.globalAlpha = .9 * A; drawText(g, 'DESLIZE O DEDO', cx, cy - 25, P.cream, 1, 'center');
-  const m = f < .15 ? 0 : f > .75 ? 1 : (f - .15) / .6, ease = 1 - (1 - m) * (1 - m), len = 14;
-  const [dx, dy] = DIRS[d], sx = cx - dx * len / 2, sy = cy + 6 - dy * len / 2, vis = f > .1 && f < .93;
-  g.fillStyle = P.gold;
-  for (let i = 0; i <= 6; i++){ const k = i / 6; if (k > ease || !vis) break; g.globalAlpha = A * .75 * k; g.fillRect(Math.round(sx + dx * len * k) - 1, Math.round(sy + dy * len * k) - 1, 2, 2); }
-  if (f > .7 && vis){ g.globalAlpha = A * .9; g.drawImage(SPR.arrow(d, 1), Math.round(sx + dx * (len + 7)) - 4, Math.round(sy + dy * (len + 7)) - 4); }
-  g.globalAlpha = A * (vis ? .85 : .35);
-  g.drawImage(SPR.hand(), Math.round(sx + dx * len * ease) - 4, Math.round(sy + dy * len * ease) - 1);
-  g.globalAlpha = 1;
+  if (r.confT > 0) drawText(g, 'INVERTIDO ' + Math.ceil(r.confT) + 'S', cx, top + HUDH + 3, '#9b84ff', 1, 'center');
+  else if (game.mode !== 'solo' && game.roundEndsAt && game.countdown <= 0 && game.roundEndsAt - performance.now() < 20000 && !r.finished)
+    drawText(g, 'O TEMPO ESTA ACABANDO', cx, top + HUDH + 3, P.red, 1, 'center');
 }
 function render(){
   bg.setTransform(1, 0, 0, 1, 0, 0); bg.fillStyle = P.ink; bg.fillRect(0, 0, BW, BH);
@@ -1554,7 +1686,7 @@ function openPause(){
 }
 
 /* ============================== telas ============================== */
-const MAX_LEVEL = 60;
+const MAX_LEVEL = 100;
 function refreshMenu(){
   refreshPrize();
   const n = Math.min(soloMax(), store.get('soloLast', 1));
@@ -1565,7 +1697,7 @@ function renderWorlds(){
   const sections = WORLDS.map((W, wi) => {
     const btns = Array.from({ length: 10 }, (_, i) => {
       const k = wi * 10 + i + 1;
-      const b = h('button', { class: k === last ? 'cur' : camp.l[k] ? 'done' : '', 'aria-label': 'Fase ' + k + (camp.l[k] ? ', concluída' : '') }, k > max ? '--' : String(k));
+      const b = h('button', { class: k === last ? 'cur' : perfect(camp.l[k]) ? 'perfect' : camp.l[k] ? 'done' : '', 'aria-label': 'Fase ' + k + (perfect(camp.l[k]) ? ', 100%' : camp.l[k] ? ', concluída' : '') }, k > max ? '--' : String(k));
       if (k > max) b.disabled = true; else b.addEventListener('click', () => { store.set('soloLast', k); startSolo(k); });
       return b;
     });
@@ -1575,7 +1707,7 @@ function renderWorlds(){
   });
   if (max > MAX_LEVEL){
     const extra = Array.from({ length: max - MAX_LEVEL }, (_, i) => { const k = MAX_LEVEL + 1 + i; return h('button', { class: k === last ? 'cur' : '', onclick: () => { store.set('soloLast', k); startSolo(k); } }, String(k)); });
-    sections.push(h('div', { class:'card world' }, h('h3', null, 'Fases extras'), h('p', { class:'note' }, 'Você passou dos 6 mundos. Daqui para frente, cada fase é um labirinto novo.'), h('div', { class:'levels' }, ...extra)));
+    sections.push(h('div', { class:'card world' }, h('h3', null, 'Fases extras'), h('p', { class:'note' }, 'Você passou dos 10 mundos. Daqui para frente, cada fase é um labirinto novo.'), h('div', { class:'levels' }, ...extra)));
   }
   box.replaceChildren(...sections);
 }
@@ -1583,17 +1715,23 @@ function buildLegend(){
   const mk = draw => { const c = document.createElement('canvas'); c.width = 8; c.height = 8; draw(c.getContext('2d')); return c.toDataURL(); };
   const items = [
     [mk(g => g.drawImage(playerSpr(P.orange, 1, false), 0, 0)), '<b>Você.</b> Desliza até bater na parede.'],
-    [mk(g => g.drawImage(SPR.door(0), 0, 0)), '<b>Porta dourada.</b> A saída da fase.'],
-    [mk(g => g.drawImage(SPR.spikes(), 0, 0)), '<b>Espinhos.</b> Tocou, volta pro início.'],
-    [mk(g => g.drawImage(SPR.arrow(1, 1), 0, 0)), '<b>Setas.</b> Mudam sua direção no meio do caminho.'],
-    [mk(g => g.drawImage(SPR.tele(0, 0), 0, 0)), '<b>Portais.</b> Te jogam para o outro portal da mesma cor.'],
-    [mk(g => { g.fillStyle = '#6b1a28'; g.fillRect(0, 3, 1, 2); g.fillRect(7, 3, 1, 2); g.fillStyle = P.pink; g.fillRect(1, 3, 6, 2); g.fillStyle = '#fff'; g.fillRect(1, 3, 6, 1); }), '<b>Lasers.</b> Ligam e desligam. Passe no apagado.'],
-    [mk(g => g.drawImage(SPR.rsUp(), 0, 0)), '<b>Espinhos que sobem.</b> Fique de olho no ritmo.'],
-    [mk(g => g.drawImage(SPR.crusher(), 0, 0)), '<b>Esmagadores.</b> Saem da parede e voltam.'],
-    [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>Maré de plasma.</b> Sobe atrás de você.'],
-    [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>Bombas.</b> Piscam e explodem em cruz.'],
-    [mk(g => g.drawImage(SPR.ghost(0), 0, 0)), '<b>Fantasma.</b> Atravessa paredes e vem atrás de você.'],
-    [mk(g => { g.fillStyle = '#04030a'; g.fillRect(0, 0, 8, 8); g.fillStyle = '#3b3550'; g.fillRect(2, 2, 4, 4); g.fillStyle = P.gold; g.fillRect(3, 3, 2, 2); }), '<b>Escuridão.</b> Você só enxerga em volta de si.'],
+    [mk(g => { g.fillStyle = P.cream; g.fillRect(3, 3, 2, 2); }), '<b>Pontinhos.</b> Pegue 80% para abrir a porta. 100% vale para o desafio.'],
+    [mk(g => g.drawImage(SPR.door(0), 0, 0)), '<b>Porta dourada.</b> A saída. Com cadeado, ainda faltam pontinhos.'],
+    [mk(g => g.drawImage(SPR.spikes(), 0, 0)), '<b>1. Espinhos</b> (fase 2+). Tocou, volta pro início.'],
+    [mk(g => g.drawImage(SPR.arrow(1, 1), 0, 0)), '<b>2. Setas</b> (fase 6+). Mudam sua direção no meio do caminho.'],
+    [mk(g => { g.fillStyle = '#6b1a28'; g.fillRect(0, 3, 1, 2); g.fillRect(7, 3, 1, 2); g.fillStyle = P.pink; g.fillRect(1, 3, 6, 2); g.fillStyle = '#fff'; g.fillRect(1, 3, 6, 1); }), '<b>3. Lasers</b> (fase 11+). Ligam e desligam. Passe no apagado.'],
+    [mk(g => g.drawImage(SPR.tele(0, 0), 0, 0)), '<b>4. Portais</b> (fase 13+). Te jogam para o outro portal da mesma cor.'],
+    [mk(g => g.drawImage(SPR.rsUp(), 0, 0)), '<b>5. Espinhos que sobem</b> (fase 21+). Fique de olho no ritmo.'],
+    [mk(g => g.drawImage(SPR.crusher(), 0, 0)), '<b>6. Esmagadores</b> (fase 24+). Saem da parede e voltam.'],
+    [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>7. Maré de plasma</b> (fases 31 a 50). Sobe atrás de você.'],
+    [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>8. Bombas</b> (fase 41+). Piscam e explodem em cruz.'],
+    [mk(g => g.drawImage(SPR.ghost(0), 0, 0)), '<b>9. Fantasma</b> (fases 51 a 60 e 91+). Atravessa paredes e vem atrás de você.'],
+    [mk(g => { g.fillStyle = '#04030a'; g.fillRect(0, 0, 8, 8); g.fillStyle = '#3b3550'; g.fillRect(2, 2, 4, 4); g.fillStyle = P.gold; g.fillRect(3, 3, 2, 2); }), '<b>10. Escuridão</b> (fases 51 a 60). Você só enxerga em volta de si.'],
+    [mk(g => g.drawImage(SPR.mud(0), 0, 0)), '<b>11. Lama</b> (fase 61+). Você atravessa bem mais devagar.'],
+    [mk(g => g.drawImage(SPR.glue(), 0, 0)), '<b>12. Cola</b> (fase 61+). Te prende na hora: o deslize para ali.'],
+    [mk(g => { g.drawImage(SPR.nozzle(), 0, 0); g.fillStyle = P.orange; g.fillRect(3, 0, 2, 2); }), '<b>13. Lança-chamas</b> (fase 71+). Solta fogo por até 3 casas.'],
+    [mk(g => g.drawImage(SPR.conf(0), 0, 0)), '<b>14. Poção da confusão</b> (fase 81+). Inverte os controles por 6 segundos.'],
+    [mk(g => { g.fillStyle = P.gold; g.fillRect(0, 0, 8, 1); g.fillRect(0, 7, 8, 1); g.fillRect(0, 0, 1, 8); g.fillRect(7, 0, 1, 8); g.fillStyle = '#fff6b0'; g.fillRect(4, 1, 1, 3); g.fillRect(3, 3, 1, 3); }), '<b>15. Raios</b> (fase 91+). A casa pisca e o raio cai. Saia de lá!'],
   ];
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const s = h('span'); s.innerHTML = html; return [h('img', { src, alt: '' }), s]; }));
 }
@@ -1617,6 +1755,8 @@ $('#btFinalExit').addEventListener('click', () => toMenu());
 $('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; store.set('soloLast', n); startSolo(n); });
 $('#btSoloMenu').addEventListener('click', () => toMenu());
 $('#btClaim').addEventListener('click', showPrize);
+$('#pzToggle').addEventListener('click', () => { const b = $('#pzToggle'), open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', String(open)); $('#pzBody').hidden = !open; $('#pzShort').hidden = open; });
+$('#btHow').addEventListener('click', () => { show('scrHow'); $('#scrHow').scrollTop = 0; });
 $('#btPrizeBack').addEventListener('click', () => toMenu());
 $('#pzName').addEventListener('input', updatePrizeLink);
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
@@ -1627,17 +1767,14 @@ $('#btCopy').addEventListener('click', () => {
   const txt = 'Bora jogar Pixel Fuga! Código da sala: ' + game.code + ' — ' + inviteLink();
   navigator.clipboard?.writeText(txt).then(() => toast('Convite copiado. Cole no WhatsApp.'), () => toast('Código: ' + game.code));
 });
-$('#btShare').addEventListener('click', () => {
-  if (navigator.share) navigator.share({ title: 'Pixel Fuga', text: 'Bora jogar Pixel Fuga! Código da sala: ' + game.code, url: inviteLink() }).catch(() => {});
-  else $('#btCopy').click();
-});
+function waInvite(){ return 'https://wa.me/?text=' + encodeURIComponent('Bora jogar Pixel Fuga comigo! 🎮\nEntra na minha sala com o código ' + game.code + ':\n' + inviteLink()); }
 
 // botão voltar do celular (app Android): devolve true quando o jogo tratou
 window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
-  if (vis === 'scrSolo' || vis === 'scrPrize'){ show('scrMenu'); refreshMenu(); return true; }
+  if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
   return false;
