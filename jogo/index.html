@@ -49,7 +49,7 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;
   background-color:var(--ink);
   background-image:linear-gradient(rgba(75,63,143,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(75,63,143,.18) 2px,transparent 2px);
   background-size:32px 32px}
-.screen.over{background-color:rgba(13,11,26,.88);justify-content:center}
+.screen.over{background-color:rgba(13,11,26,.88)}
 .wrap{width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px;margin:auto 0}
 .logo{font-family:var(--pixel);font-weight:400;font-size:clamp(26px,8.5vw,36px);line-height:1.25;text-align:center;margin:6px 0 0;letter-spacing:.02em;color:var(--gold);
   text-shadow:3px 3px 0 var(--red),6px 6px 0 #000}
@@ -132,6 +132,15 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
 .by{display:block;text-align:center;font-family:var(--pixel);font-size:11px;line-height:1.6;color:var(--pink);text-decoration:none;padding:8px}
 .by:hover,.by:focus-visible{color:#fff;outline:none;text-decoration:underline}
 .ver{text-align:center;color:var(--violet);font-size:18px}
+/* desafio do prêmio */
+.prize{border-color:var(--gold);background:linear-gradient(180deg,#2a2208,var(--night))}
+.prizeval{font-family:var(--pixel);font-size:34px;line-height:1.3;text-align:center;color:var(--lime);text-shadow:4px 4px 0 #000}
+.bar{height:14px;border:3px solid #000;background:var(--ink);box-shadow:3px 3px 0 #000}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--gold) 0 6px,var(--orange) 6px 8px)}
+details summary{font-family:var(--pixel);font-size:10px;color:var(--gold);cursor:pointer;line-height:1.8}
+details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.rules{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:19px;color:var(--muted)}
+.rules b{color:var(--cream);font-weight:400}
 @media (prefers-reduced-motion:reduce){.press{animation:none}button:active,a.btn:active{transform:none}}
 </style>
 </head>
@@ -145,7 +154,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
-    <p class="ver">v1.3 · 50 fases · 7 perigos</p>
+    <p class="ver">v1.4 · 60 fases · 10 perigos</p>
   </div>
 </section>
 
@@ -153,6 +162,21 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
 <section class="screen" id="scrMenu" hidden>
   <div class="wrap">
     <h1 class="logo">PIXEL<br><span>FUGA</span></h1>
+    <div class="card prize" id="prizeCard">
+      <h3>Desafio R$ 50</h3>
+      <p class="note">Zere as <b>60 fases</b> no modo sozinho e ganhe <b>R$ 50 no Pix</b>.</p>
+      <div class="bar" role="progressbar" aria-label="Fases concluídas" aria-valuemin="0" aria-valuemax="60" id="pzBarBox"><i id="pzBar"></i></div>
+      <p class="note" id="pzProg">0 de 60 fases concluídas</p>
+      <button class="main" id="btClaim" hidden>Resgatar prêmio</button>
+      <details><summary>Regras do desafio</summary>
+        <ul class="rules">
+          <li>Vale só o modo <b>Jogar sozinho</b>, com as 60 fases terminadas no mesmo aparelho, a partir da versão 1.4.</li>
+          <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
+          <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
+          <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
+        </ul>
+      </details>
+    </div>
     <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="nickname" placeholder="Como te chamam?"></label>
     <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
     <button class="big" id="btLocal">2 no mesmo celular<small>Tela dividida, um de frente pro outro</small></button>
@@ -183,7 +207,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
 <section class="screen" id="scrSolo" hidden>
   <div class="wrap">
     <h2>Escolha a fase</h2>
-    <p class="note">São 5 mundos com 10 fases cada. Cada mundo traz perigos novos. Termine uma fase para abrir a próxima.</p>
+    <p class="note">São 6 mundos com 10 fases cada. Cada mundo traz perigos novos. Termine uma fase para abrir a próxima.</p>
     <div id="worlds" style="display:flex;flex-direction:column;gap:16px"></div>
     <button class="ghost" data-back>Voltar</button>
   </div>
@@ -248,6 +272,31 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
   </div>
 </section>
 
+<!-- PRÊMIO -->
+<section class="screen over" id="scrPrize" hidden>
+  <div class="wrap">
+    <h3 class="center">Desafio Pixel Fuga</h3>
+    <div class="winner">VOCÊ ZEROU AS 60 FASES!</div>
+    <div class="card prize">
+      <div class="prizeval">R$ 50</div>
+      <p class="note center">Você ganhou o desafio! Mande a mensagem para o criador do jogo no WhatsApp para receber o prêmio.</p>
+    </div>
+    <div class="card"><div class="rank" id="pzStats"></div></div>
+    <label class="f">Seu nome (vai na mensagem)<input id="pzName" maxlength="30" autocomplete="name"></label>
+    <a class="btn main" id="pzWa" href="#" target="_blank" rel="noopener">Resgatar no WhatsApp</a>
+    <p class="note">Número: <b>(98) 97005-0096</b>. Se o WhatsApp não abrir, mande seu nome e o código <b id="pzCode2">----</b> para esse número.</p>
+    <details class="card"><summary>Regras do desafio</summary>
+      <ul class="rules">
+          <li>Vale só o modo <b>Jogar sozinho</b>, com as 60 fases terminadas no mesmo aparelho, a partir da versão 1.4.</li>
+          <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
+          <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
+          <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
+        </ul>
+    </details>
+    <button class="ghost" id="btPrizeBack">Voltar ao menu</button>
+  </div>
+</section>
+
 <!-- PAUSA -->
 <section class="screen over" id="scrPause" hidden>
   <div class="wrap">
@@ -295,7 +344,7 @@ function h(tag, attrs, ...kids){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPause','scrWait'];
+const SCREENS = ['scrTitle','scrMenu','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -408,6 +457,10 @@ const SPR = {
   },
   hand: () => sprite('hand', ['....kk.....', '...kwwk....', '...kwwk....', '...kwwkkkk.', '.kkkwwkwwkk', 'kwwkwwwwwwk', 'kwwwwwwwwwk', '.kwwwwwwwwk',
     '..kwwwwwwk.', '..kwwwwwwk.', '...kkkkkk..'], { k: P.ink, w: P.cream }),
+  bomb: st => sprite('bomb' + st, ['.....ff.', '....k...', '..kkkk..', '.kbbbbk.', '.kwbbbk.', '.kbbbbk.', '..kkkk..', '........'],
+    { k: P.black, b: st === 1 ? P.red : '#7b74a6', w: st === 1 ? '#ffd1d6' : P.cream, f: st === 1 ? '#ffffff' : P.orange }),
+  ghost: f => sprite('gh' + f, ['..wwww..', '.wwwwww.', 'wwkwwkww', 'wwkwwkww', 'wwwwwwww', 'wwwwwwww', f ? 'ww.ww.ww' : 'w.ww.ww.', f ? 'w..w..w.' : '.w..w..w'],
+    { w: '#e4dcff', k: P.ink }),
   pause: () => sprite('ps', ['.......', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.......'], { k: P.cream }),
   restart: () => sprite('rst', ['..kkk..', '.k...kk', 'k....kk', 'k......', 'k.....k', '.k...k.', '..kkk..'], { k: P.cream }),
 };
@@ -422,7 +475,8 @@ const WORLDS = [
   { name:'Esgoto',             wall:'#2f7a6a', hi:'#6fd6b0', lo:'#143a33', floor:'#08120f', speck:'#15302a', news:'Lasers e portais' },
   { name:'Caverna de Cristal', wall:'#4b3f8f', hi:'#8af0e6', lo:'#221c4a', floor:'#0d0b1a', speck:'#252047', news:'Espinhos que sobem e esmagadores' },
   { name:'Fornalha',           wall:'#a3322b', hi:'#ff9a3e', lo:'#4d1412', floor:'#150808', speck:'#351311', news:'A maré de plasma sobe atrás de você' },
-  { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Tudo junto, mais rápido' },
+  { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Bombas, e tudo junto mais rápido' },
+  { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Escuridão e o fantasma caçador' },
 ];
 const worldIdx = idx => Math.floor((idx - 1) / 10) % WORLDS.length;
 
@@ -504,7 +558,7 @@ function genLevel(idx, seed){
     }
     const start = (h - 2) * w + 2 * sx + 1;
     const L = { idx, seed, w, h, grid, start, exit:-1, spikes:new Uint8Array(w * h), dots:new Uint8Array(w * h), arrow:new Uint8Array(w * h),
-      tele:new Int32Array(w * h).fill(-1), pairs:[], lasers:[], laserAt:new Map(), rspikes:[], rsAt:new Map(), drones:[],
+      tele:new Int32Array(w * h).fill(-1), pairs:[], lasers:[], laserAt:new Map(), rspikes:[], rsAt:new Map(), drones:[], bombs:[], ghost:null, dark:false,
       theme: WORLDS[worldIdx(idx)], tideSpeed:0, tideDelay:6 };
     let an = analyze(L, false);
     // saída: entre os pontos mais altos, o mais longe do início
@@ -597,7 +651,20 @@ function genLevel(idx, seed){
       used[t] = 1;
       L.drones.push({ ax: cx + sd[0], ay: cy + sd[1], bx: cx, by: cy, speed: 2.2 + Math.min(idx, 50) * 0.03, phase: R() * 6.3 });
     }
-    if (idx >= 31) L.tideSpeed = 0.22 + Math.min(idx - 31, 30) * 0.009;
+    // bombas (a partir da fase 41): piscam e explodem em cruz
+    const nBo = idx < 41 ? 0 : Math.min(2 + Math.floor((idx - 41) / 2), 8);
+    const sxy = [start % w, (start / w) | 0], exy = [L.exit % w, (L.exit / w) | 0];
+    for (const t of pool){
+      if (L.bombs.length >= nBo) break;
+      if (used[t]) continue;
+      const bx = t % w, by = (t / w) | 0;
+      if (Math.abs(bx - sxy[0]) + Math.abs(by - sxy[1]) < 4 || Math.abs(bx - exy[0]) + Math.abs(by - exy[1]) < 3) continue;
+      used[t] = 1;
+      L.bombs.push({ t, x: bx, y: by, period: 3 + R() * 1.4, phase: R() * 4 });
+    }
+    if (idx >= 31 && idx <= 50) L.tideSpeed = 0.22 + Math.min(idx - 31, 30) * 0.009;
+    // fantasma caçador e escuridão (a partir da fase 51)
+    if (idx >= 51){ L.ghost = { sx: 1, sy: 1, speed: 0.8 + Math.min(idx - 51, 20) * 0.03, delay: 4 }; L.dark = true; }
     for (const t of an.trav.keys()) if (t !== L.exit && !L.spikes[t] && L.tele[t] < 0 && !L.arrow[t]) L.dots[t] = 1;
     L.dots[start] = 0;
     L.totalDots = L.dots.reduce((a, b) => a + b, 0);
@@ -607,6 +674,8 @@ function genLevel(idx, seed){
   genCache.set(key, fallback);
   return fallback;
 }
+// bomba: 0 parada, 1 piscando (vai explodir), 2 explodindo
+function bombState(b, clock){ const t = (clock + b.phase) % b.period; return t > b.period - .35 ? 2 : t > b.period - 1.35 ? 1 : 0; }
 const timedOn = (g, clock) => (((clock + g.phase) % g.period) / g.period) < g.on;
 const timedPhase = (g, clock) => ((clock + g.phase) % g.period) / g.period;
 function dronePos(dr, clock){
@@ -626,6 +695,7 @@ class Runner {
   respawn(){
     const L = this.L; this.pos = L.start; this.x = L.start % L.w; this.y = (L.start / L.w) | 0;
     this.moving = null; this.queued = null; this.dead = 0; this.tide = L.h + 2; this.tideT = 0; this.trail.length = 0; this.spawnFx = 1;
+    if (L.ghost){ this.gx = L.ghost.sx; this.gy = L.ghost.sy; this.gT = 0; }
   }
   swipe(d){
     this.swiped = true;
@@ -685,6 +755,19 @@ class Runner {
       this.trail.push([this.x, this.y]); if (this.trail.length > 6) this.trail.shift();
     } else if (this.trail.length) this.trail.shift();
     for (const dr of L.drones){ const [ex, ey] = dronePos(dr, game.clock); if (Math.abs(ex - this.x) < 0.62 && Math.abs(ey - this.y) < 0.62){ this.kill(); return; } }
+    for (const b of L.bombs){
+      if (bombState(b, game.clock) !== 2) continue;
+      const dx = Math.abs(b.x - this.x), dy = Math.abs(b.y - this.y);
+      if ((dx < .6 && dy < 1.6) || (dy < .6 && dx < 1.6)){ this.kill(); return; }
+    }
+    if (L.ghost){
+      this.gT += dt;
+      if (this.gT > L.ghost.delay){
+        const dx = this.x - this.gx, dy = this.y - this.gy, d = Math.hypot(dx, dy) || 1;
+        const st = Math.min(d, L.ghost.speed * dt); this.gx += dx / d * st; this.gy += dy / d * st;
+        if (d < .6){ this.kill(); return; }
+      }
+    }
     if (L.tideSpeed){
       this.tideT += dt;
       if (this.tideT > L.tideDelay) this.tide -= L.tideSpeed * dt;
@@ -747,7 +830,7 @@ class Room {
   }
   nextRound(){
     this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play';
-    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx: Math.min(45, 3 + (this.round - 1) * 6), seed: (this.seed + this.round * 977) >>> 0 });
+    this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx: Math.min(55, 3 + (this.round - 1) * 8), seed: (this.seed + this.round * 977) >>> 0 });
     clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 243000);
   }
   finish(id, m){
@@ -946,11 +1029,57 @@ function startSolo(n){
   game.ghosts = {}; game.countdown = 1.2; game.clock = 0; game.roundInfo = null; game.deadline = null; parts = [];
   show(null);
 }
+/* ---------- desafio: registro das fases concluídas (com assinatura para dificultar edição manual) ---------- */
+const PRIZE_LEVELS = 60, WA_NUMBER = '5598970050096';
+function fnv(str){ let h = 0x811c9dc5; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+const campSig = c => fnv('pxf|' + JSON.stringify(c) + '|60-fases-r$50').toString(36);
+function loadCamp(){
+  const c = store.get('camp', null);
+  if (!c || typeof c !== 'object' || !c.l || store.get('campSig', '') !== campSig(c)) return { v: 1, l: {} };
+  return c;
+}
+function saveCamp(c){ store.set('camp', c); store.set('campSig', campSig(c)); }
+function recordLevel(n, r){
+  if (r.time < 2) return;
+  const c = loadCamp(), old = c.l[n];
+  if (!old || r.time < old[0]) c.l[n] = [Math.round(r.time * 10) / 10, r.deaths];
+  saveCamp(c);
+}
+function campDone(c = loadCamp()){ let k = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]) k++; return k; }
+function prizeCode(c, name){
+  const parts = []; for (let i = 1; i <= PRIZE_LEVELS; i++) parts.push(c.l[i] ? c.l[i].join(':') : '-');
+  const a = fnv(name.toLowerCase() + '|' + parts.join(',')).toString(36).toUpperCase().padStart(7, '0'), b = fnv(parts.join(',') + '|pxf').toString(36).toUpperCase().padStart(7, '0');
+  return (a.slice(0, 4) + '-' + b.slice(0, 4));
+}
+function prizeTotals(c){ let t = 0, d = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]){ t += c.l[i][0]; d += c.l[i][1]; } return { t, d }; }
+function updatePrizeLink(){
+  const c = loadCamp(), name = clean($('#pzName').value, 30) || myName(), code = prizeCode(c, name), tot = prizeTotals(c);
+  const msg = 'Olá, @jonsousax! Zerei as 60 fases do Pixel Fuga e ganhei o desafio de R$ 50! 🏆\n'
+    + 'Nome: ' + name + '\nTempo somado: ' + fmtTime(tot.t) + '\nVoltas ao início: ' + tot.d + '\nCódigo: ' + code;
+  $('#pzWa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
+  $('#pzCode2').textContent = code;
+}
+function showPrize(){
+  const c = loadCamp(); if (campDone(c) < PRIZE_LEVELS) return;
+  const tot = prizeTotals(c);
+  if (!$('#pzName').value) $('#pzName').value = store.get('name', '') || '';
+  $('#pzStats').replaceChildren(statRow('Fases', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
+  updatePrizeLink(); sfx('win');
+  show('scrPrize');
+}
+function refreshPrize(){
+  const k = campDone();
+  $('#pzBar').style.width = (k / PRIZE_LEVELS * 100) + '%'; $('#pzBarBox').setAttribute('aria-valuenow', k);
+  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases concluídas' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
+  $('#btClaim').hidden = k < PRIZE_LEVELS;
+}
 function onRunnerFinish(r){
   if (game.mode === 'solo'){
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
+    recordLevel(game.soloLevel, r);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
+      if (game.soloLevel === PRIZE_LEVELS && campDone() >= PRIZE_LEVELS){ game.phase = 'solodone'; showPrize(); return; }
       game.phase = 'solodone';
       $('#sdLevel').textContent = 'Fase ' + game.soloLevel;
       const L = game.level, box = $('#sdStats'); box.replaceChildren(
@@ -1139,6 +1268,17 @@ function drawWorld(vp){
     const on = timedOn(rs, game.clock), ph = timedPhase(rs, game.clock);
     g.drawImage(on ? SPR.rsUp() : ph > .82 ? SPR.rsWarn() : SPR.rsDown(), ox + rs.x * TS, oy + rs.y * TS);
   }
+  // bombas
+  for (const b of L.bombs){
+    if (b.y < y0 - 1 || b.y > y1 + 1 || b.x < x0 - 1 || b.x > x1 + 1) continue;
+    const st = bombState(b, game.clock), X = ox + b.x * TS, Y = oy + b.y * TS;
+    if (st === 2){
+      for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]){
+        const nx = b.x + dx, ny = b.y + dy; if (nx < 0 || ny < 0 || nx >= L.w || ny >= L.h || L.grid[ny * L.w + nx] === WALL) continue;
+        for (let i = 0; i < 18; i++){ g.fillStyle = [P.gold, P.orange, '#ffffff', P.red][(i + fr) % 4]; g.fillRect(X + dx * TS + ((i * 37 + fr * 11) % 8), Y + dy * TS + ((i * 53 + fr * 7) % 8), 1, 1); }
+      }
+    } else g.drawImage(SPR.bomb(st === 1 && fr % 2 ? 1 : 0), X, Y);
+  }
   // porta de saída
   { const X = ox + (L.exit % L.w) * TS, Y = oy + ((L.exit / L.w) | 0) * TS;
     g.drawImage(SPR.door(fr % 2), X, Y);
@@ -1187,7 +1327,26 @@ function drawWorld(vp){
       g.fillStyle = '#ffd1e3'; for (let b = 0; b < 6; b++){ const bxp = (b * 23 + Math.floor(now * 7) * 3) % vp.w; g.fillRect(bxp, Y + 5 + ((b * 5 + fr) % 9), 1, 1); }
     }
   }
+  // escuridão: só a luz da lanterna em volta do jogador (e um brilho fraco na porta)
+  if (L.dark){
+    const dc = darkCv.getContext('2d');
+    if (darkCv.width !== vp.w || darkCv.height !== vp.h){ darkCv.width = vp.w; darkCv.height = vp.h; }
+    dc.globalCompositeOperation = 'source-over'; dc.globalAlpha = 1; dc.clearRect(0, 0, vp.w, vp.h);
+    dc.fillStyle = 'rgba(4,3,10,0.96)'; dc.fillRect(0, 0, vp.w, vp.h);
+    dc.globalCompositeOperation = 'destination-out';
+    const cx = ox + r.x * TS + 4, cy = oy + r.y * TS + 4, Rl = 34 + (fr % 3 === 0 ? 1 : 0);
+    for (const [rr, a] of [[Rl + 12, .3], [Rl + 6, .45], [Rl, 1]]){ dc.globalAlpha = a; dc.beginPath(); dc.arc(cx, cy, rr, 0, 7); dc.fill(); }
+    dc.globalAlpha = .55; dc.beginPath(); dc.arc(ox + (L.exit % L.w) * TS + 4, oy + ((L.exit / L.w) | 0) * TS + 4, 9, 0, 7); dc.fill();
+    dc.globalAlpha = 1; dc.globalCompositeOperation = 'source-over';
+    g.drawImage(darkCv, 0, 0);
+  }
+  if (L.ghost && r.gT > L.ghost.delay - 1.5 && r.dead <= 0){
+    g.globalAlpha = r.gT < L.ghost.delay ? (fr % 2 ? .3 : .6) : .85;
+    g.drawImage(SPR.ghost(fr % 2), Math.round(ox + r.gx * TS), Math.round(oy + r.gy * TS));
+    g.globalAlpha = 1;
+  }
 }
+const darkCv = document.createElement('canvas');
 function drawHUD(vp){
   const g = bg, r = vp.r, L = game.level, T = L.theme, top = vp.top;
   g.fillStyle = P.ink; g.fillRect(0, 0, vp.w, top + HUDH);
@@ -1395,17 +1554,18 @@ function openPause(){
 }
 
 /* ============================== telas ============================== */
-const MAX_LEVEL = 50;
+const MAX_LEVEL = 60;
 function refreshMenu(){
+  refreshPrize();
   const n = Math.min(soloMax(), store.get('soloLast', 1));
   $('#soloSub').textContent = 'Fase ' + n + ' · Mundo ' + (worldIdx(n) + 1) + ': ' + WORLDS[worldIdx(n)].name;
 }
 function renderWorlds(){
-  const max = soloMax(), last = store.get('soloLast', 1), box = $('#worlds');
+  const max = soloMax(), last = store.get('soloLast', 1), box = $('#worlds'), camp = loadCamp();
   const sections = WORLDS.map((W, wi) => {
     const btns = Array.from({ length: 10 }, (_, i) => {
       const k = wi * 10 + i + 1;
-      const b = h('button', { class: k === last ? 'cur' : k < max ? 'done' : '', 'aria-label': 'Fase ' + k }, k > max ? '--' : String(k));
+      const b = h('button', { class: k === last ? 'cur' : camp.l[k] ? 'done' : '', 'aria-label': 'Fase ' + k + (camp.l[k] ? ', concluída' : '') }, k > max ? '--' : String(k));
       if (k > max) b.disabled = true; else b.addEventListener('click', () => { store.set('soloLast', k); startSolo(k); });
       return b;
     });
@@ -1415,7 +1575,7 @@ function renderWorlds(){
   });
   if (max > MAX_LEVEL){
     const extra = Array.from({ length: max - MAX_LEVEL }, (_, i) => { const k = MAX_LEVEL + 1 + i; return h('button', { class: k === last ? 'cur' : '', onclick: () => { store.set('soloLast', k); startSolo(k); } }, String(k)); });
-    sections.push(h('div', { class:'card world' }, h('h3', null, 'Fases extras'), h('p', { class:'note' }, 'Você zerou os 5 mundos. Daqui para frente, cada fase é um labirinto novo.'), h('div', { class:'levels' }, ...extra)));
+    sections.push(h('div', { class:'card world' }, h('h3', null, 'Fases extras'), h('p', { class:'note' }, 'Você passou dos 6 mundos. Daqui para frente, cada fase é um labirinto novo.'), h('div', { class:'levels' }, ...extra)));
   }
   box.replaceChildren(...sections);
 }
@@ -1431,6 +1591,9 @@ function buildLegend(){
     [mk(g => g.drawImage(SPR.rsUp(), 0, 0)), '<b>Espinhos que sobem.</b> Fique de olho no ritmo.'],
     [mk(g => g.drawImage(SPR.crusher(), 0, 0)), '<b>Esmagadores.</b> Saem da parede e voltam.'],
     [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>Maré de plasma.</b> Sobe atrás de você.'],
+    [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>Bombas.</b> Piscam e explodem em cruz.'],
+    [mk(g => g.drawImage(SPR.ghost(0), 0, 0)), '<b>Fantasma.</b> Atravessa paredes e vem atrás de você.'],
+    [mk(g => { g.fillStyle = '#04030a'; g.fillRect(0, 0, 8, 8); g.fillStyle = '#3b3550'; g.fillRect(2, 2, 4, 4); g.fillStyle = P.gold; g.fillRect(3, 3, 2, 2); }), '<b>Escuridão.</b> Você só enxerga em volta de si.'],
   ];
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const s = h('span'); s.innerHTML = html; return [h('img', { src, alt: '' }), s]; }));
 }
@@ -1453,6 +1616,9 @@ $('#btAgain').addEventListener('click', () => send(game.me[0], { t:'again' }));
 $('#btFinalExit').addEventListener('click', () => toMenu());
 $('#btNext').addEventListener('click', () => { const n = game.soloLevel + 1; store.set('soloLast', n); startSolo(n); });
 $('#btSoloMenu').addEventListener('click', () => toMenu());
+$('#btClaim').addEventListener('click', showPrize);
+$('#btPrizeBack').addEventListener('click', () => toMenu());
+$('#pzName').addEventListener('input', updatePrizeLink);
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
 $('#btQuit').addEventListener('click', () => toMenu());
 const PUBLIC_URL = 'https://pixelfuga.vercel.app/';
@@ -1471,7 +1637,7 @@ window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
-  if (vis === 'scrSolo'){ show('scrMenu'); refreshMenu(); return true; }
+  if (vis === 'scrSolo' || vis === 'scrPrize'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
   return false;

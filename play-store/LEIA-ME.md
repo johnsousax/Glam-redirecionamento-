@@ -18,8 +18,9 @@ Labirinto em pixel art: deslize, desvie dos perigos e fuja antes dos amigos.
 **Descrição completa:**
 Deslize o dedo e o bonequinho dispara até bater na parede. Ache a porta dourada no alto do labirinto antes que os perigos te peguem!
 
-- 50 fases em 5 mundos: Porão, Esgoto, Caverna de Cristal, Fornalha e Torre de Gelo
-- 7 perigos: espinhos, setas, portais, lasers, espinhos que sobem, esmagadores e a maré de plasma
+- 60 fases em 6 mundos: Porão, Esgoto, Caverna de Cristal, Fornalha, Torre de Gelo e Mansão Assombrada
+- 10 perigos: espinhos, setas, portais, lasers, espinhos que sobem, esmagadores, maré de plasma, bombas, fantasma caçador e escuridão
+- Desafio: quem zerar as 60 fases ganha R$ 50 (regras dentro do jogo)
 - Jogue sozinho, a 2 no mesmo celular (tela dividida) ou numa sala online com até 6 amigos
 - Salas com código de 4 letras: mande o convite no WhatsApp e jogue na hora
 - Modo sozinho funciona sem internet
@@ -54,3 +55,7 @@ Já está pronto em https://pixelfuga.vercel.app:
 Falta (só dá para fazer depois de criar o app no Play Console):
 
 - O arquivo `jogo/.well-known/assetlinks.json` do passo 4. Ele precisa da impressão digital SHA-256 que o Play Console mostra em *Integridade do app › Assinatura de apps*. Mande esse código que o arquivo é criado e publicado.
+
+## Atenção: desafio com prêmio em dinheiro (versão 1.4)
+
+A Google Play permite concursos com prêmio, mas exige que as **regras oficiais** fiquem visíveis (estão no menu do jogo, em "Regras do desafio") e que fique claro que **a Google não patrocina** o desafio (já está nas regras). Declare o desafio no questionário de conteúdo do Play Console. As capturas de tela desta pasta são da versão com 50 fases e ainda valem; o texto da ficha acima já fala em 60 fases e 10 perigos.
