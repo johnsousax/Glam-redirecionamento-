@@ -5,8 +5,8 @@
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-3}
-VERSION_NAME=${VERSION_NAME:-1.2}
+VERSION_CODE=${VERSION_CODE:-4}
+VERSION_NAME=${VERSION_NAME:-1.3}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
 KS_PASS=${KS_PASS:-fuganeon}
 M=https://repo1.maven.org/maven2
@@ -22,7 +22,7 @@ javac -nowarn --release 8 -cp tools/android.jar:build/stubs -d build/classes src
 java -cp tools/dx.jar com.android.dx.command.Main --dex --min-sdk-version=24 --output=build/classes.dex build/classes
 # 3) ícone e cópia do jogo (usada quando não há internet)
 python3 make_icon.py build/icon.png
-cp ../jogo/index.html ../jogo/peerjs.min.js build/assets/
+cp ../jogo/index.html ../jogo/peerjs.min.js ../jogo/politica-de-privacidade.html build/assets/
 # 4) manifesto, recursos e zip
 python3 build_apk.py build/classes.dex build/icon.png build/assets build/unsigned.apk "$VERSION_CODE" "$VERSION_NAME"
 # 5) chave de assinatura (mantenha a mesma para as atualizações instalarem por cima)

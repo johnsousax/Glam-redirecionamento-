@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pixel Fuga">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
 <title>Pixel Fuga</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -142,7 +145,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">By @jonsousax</a>
-    <p class="ver">v1.2 · 50 fases · 7 perigos</p>
+    <p class="ver">v1.3 · 50 fases · 7 perigos</p>
   </div>
 </section>
 
@@ -172,6 +175,7 @@ button.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
       <div class="how" id="legend"></div>
     </div>
     <button class="ghost" id="btToTitle">Tela inicial</button>
+    <a class="by" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
 
@@ -402,6 +406,8 @@ const SPR = {
     const sp = [[2, 0], [7, 2], [5, 7], [0, 5]][f % 4]; ring[sp[1]][sp[0]] = 'w';
     return sprite('tp' + pair + f, ring.map(r => r.join('')), { c: C[0], p: C[1], w: '#ffffff' });
   },
+  hand: () => sprite('hand', ['....kk.....', '...kwwk....', '...kwwk....', '...kwwkkkk.', '.kkkwwkwwkk', 'kwwkwwwwwwk', 'kwwwwwwwwwk', '.kwwwwwwwwk',
+    '..kwwwwwwk.', '..kwwwwwwk.', '...kkkkkk..'], { k: P.ink, w: P.cream }),
   pause: () => sprite('ps', ['.......', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.kk.kk.', '.......'], { k: P.cream }),
   restart: () => sprite('rst', ['..kkk..', '.k...kk', 'k....kk', 'k......', 'k.....k', '.k...k.', '..kkk..'], { k: P.cream }),
 };
@@ -622,6 +628,7 @@ class Runner {
     this.moving = null; this.queued = null; this.dead = 0; this.tide = L.h + 2; this.tideT = 0; this.trail.length = 0; this.spawnFx = 1;
   }
   swipe(d){
+    this.swiped = true;
     if (this.finished || this.dead > 0) return;
     if (this.moving){ this.queued = d; return; }
     this.go(d);
@@ -1095,10 +1102,12 @@ function bake(L){
 }
 function drawWorld(vp){
   const g = bg, L = game.level, r = vp.r, T = L.theme, WW = L.w * TS, WH = L.h * TS;
-  const top = HUDH + vp.top, avail = vp.h - top - vp.bot;
+  // enquanto a dica de deslizar aparece embaixo, o labirinto sobe para o jogador não ficar escondido
+  const bot = vp.bot + Math.round((r.hintA || 0) * 66);
+  const top = HUDH + vp.top, avail = vp.h - top - bot;
   const px = r.x * TS + 4, py = r.y * TS + 4;
   const tx = WW <= vp.w ? -Math.floor((vp.w - WW) / 2) : Math.max(0, Math.min(WW - vp.w, px - vp.w / 2));
-  const ty = WH <= avail ? -top - Math.floor((avail - WH) / 2) : Math.max(-top, Math.min(WH - vp.h + vp.bot, py - top - avail * 0.55));
+  const ty = WH <= avail ? -top - Math.floor((avail - WH) / 2) : Math.max(-top, Math.min(WH - vp.h + bot, py - top - avail * 0.55));
   const k = Math.min(1, game.dt * 9);
   r.camX = r.camX == null ? tx : r.camX + (tx - r.camX) * k;
   r.camY = r.camY == null ? ty : r.camY + (ty - r.camY) * k;
@@ -1205,6 +1214,25 @@ function drawHUD(vp){
     const left = Math.max(0, (game.deadline - performance.now()) / 1000);
     drawText(g, 'FIM EM ' + Math.ceil(left) + 'S', cx, top + HUDH + 3, P.gold, 1, 'center');
   }
+  drawSwipeHint(vp);
+}
+// dica no começo da partida: mãozinha transparente mostrando os 4 movimentos, na parte de baixo da tela
+function drawSwipeHint(vp){
+  const r = vp.r, want = !r.swiped && !r.finished && r.time < 12 ? 1 : 0;
+  r.hintA = r.hintA == null ? want : r.hintA + (want - r.hintA) * Math.min(1, game.dt * 4);
+  if (r.hintA < 0.02) return;
+  const g = bg, A = r.hintA, cx = Math.round(vp.w / 2), cy = vp.h - vp.bot - 38;
+  const T = performance.now() / 1000, d = Math.floor(T / 1.1) % 4, f = (T % 1.1) / 1.1;
+  g.globalAlpha = .4 * A; g.fillStyle = P.ink; g.fillRect(cx - 46, cy - 28, 92, 62);
+  g.globalAlpha = .9 * A; drawText(g, 'DESLIZE O DEDO', cx, cy - 25, P.cream, 1, 'center');
+  const m = f < .15 ? 0 : f > .75 ? 1 : (f - .15) / .6, ease = 1 - (1 - m) * (1 - m), len = 14;
+  const [dx, dy] = DIRS[d], sx = cx - dx * len / 2, sy = cy + 6 - dy * len / 2, vis = f > .1 && f < .93;
+  g.fillStyle = P.gold;
+  for (let i = 0; i <= 6; i++){ const k = i / 6; if (k > ease || !vis) break; g.globalAlpha = A * .75 * k; g.fillRect(Math.round(sx + dx * len * k) - 1, Math.round(sy + dy * len * k) - 1, 2, 2); }
+  if (f > .7 && vis){ g.globalAlpha = A * .9; g.drawImage(SPR.arrow(d, 1), Math.round(sx + dx * (len + 7)) - 4, Math.round(sy + dy * (len + 7)) - 4); }
+  g.globalAlpha = A * (vis ? .85 : .35);
+  g.drawImage(SPR.hand(), Math.round(sx + dx * len * ease) - 4, Math.round(sy + dy * len * ease) - 1);
+  g.globalAlpha = 1;
 }
 function render(){
   bg.setTransform(1, 0, 0, 1, 0, 0); bg.fillStyle = P.ink; bg.fillRect(0, 0, BW, BH);
@@ -1456,6 +1484,8 @@ buildLegend(); resize(); refreshMenu(); show('scrTitle');
 // abrir pelo link de convite: vai direto para o menu com o código preenchido
 const qs = new URLSearchParams(location.search).get('sala');
 if (qs){ $('#inCode').value = clean(qs, 4).toUpperCase(); show('scrMenu'); setTimeout(() => { $('#inName').focus(); toast('Digite seu nome e toque em Entrar.'); }, 300); }
+// guarda o jogo no aparelho (funciona sem internet depois da primeira visita)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 requestAnimationFrame(frame);
 window.__fneon = { game, genLevel, analyze, noTraps, slide };
 </script>

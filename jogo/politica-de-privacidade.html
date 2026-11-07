@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1a">
+<title>Política de Privacidade · Pixel Fuga</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+:root{--ink:#0d0b1a;--night:#1b1838;--violet:#4b3f8f;--cream:#f4f1de;--muted:#a9a3cf;--gold:#ffd23f;--pink:#ff77a8;--red:#e8435a;
+  --pixel:'Press Start 2P','Courier New',monospace;--body:'VT323','Courier New',monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);font-size:22px;line-height:1.25}
+main{max-width:680px;margin:0 auto;padding:32px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--pixel);font-weight:400;font-size:clamp(16px,4.6vw,22px);line-height:1.6;color:var(--gold);text-shadow:3px 3px 0 var(--red);margin:0;text-wrap:balance}
+h2{font-family:var(--pixel);font-weight:400;font-size:12px;line-height:1.7;color:var(--gold);margin:14px 0 0;text-transform:uppercase}
+p,li{margin:0;max-width:65ch}
+ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.muted{color:var(--muted)}
+.card{background:var(--night);border:3px solid var(--violet);box-shadow:5px 5px 0 #000;padding:14px 16px}
+a{color:var(--pink)}
+a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.back{font-family:var(--pixel);font-size:11px;text-decoration:none;display:inline-block;margin-top:10px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Política de Privacidade do Pixel Fuga</h1>
+  <p class="muted">Atualizada em 7 de novembro de 2026.</p>
+
+  <div class="card">
+    <p>Resumo: o Pixel Fuga não tem cadastro, não tem anúncios e não usa ferramentas de análise ou rastreamento. Seu progresso fica só no seu aparelho. No modo online, seu apelido e o texto da aposta são enviados aos outros jogadores da sala.</p>
+  </div>
+
+  <h2>Quem é o responsável</h2>
+  <p>O Pixel Fuga é um jogo independente criado por @jonsousax. Para falar sobre privacidade, mande mensagem para <a href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener">@jonsousax no Instagram</a>.</p>
+
+  <h2>O que fica guardado no seu aparelho</h2>
+  <ul>
+    <li>O apelido que você digita no menu.</li>
+    <li>As fases que você já abriu e a última fase jogada.</li>
+    <li>Uma cópia do próprio jogo, para ele abrir sem internet.</li>
+  </ul>
+  <p>Esses dados ficam no armazenamento local do navegador ou do app e não são enviados para nós. Você pode apagá-los limpando os dados do site ou do app nas configurações do celular, ou desinstalando o app.</p>
+
+  <h2>Modo online (salas)</h2>
+  <p>Quando você cria ou entra numa sala:</p>
+  <ul>
+    <li>Seu <b>apelido</b>, sua <b>posição no labirinto</b>, seus pontos e o <b>texto da aposta</b> (se alguém propuser uma) são enviados para os outros jogadores daquela sala.</li>
+    <li>Para os celulares se encontrarem pelo código da sala, o jogo usa o servidor público gratuito do PeerJS (0.peerjs.com). Ele recebe um identificador temporário da sala e o endereço IP de cada aparelho.</li>
+    <li>Depois disso, os celulares conversam direto entre si (tecnologia WebRTC). Por isso, o endereço IP de cada jogador fica visível para os outros aparelhos da sala, como acontece em chamadas de vídeo.</li>
+  </ul>
+  <p>Nada disso é guardado por nós. Quando a sala fecha, as informações da partida somem. O texto da aposta é só um combinado entre os jogadores: o jogo não envolve dinheiro nem pagamentos.</p>
+
+  <h2>Serviços de terceiros</h2>
+  <ul>
+    <li><b>Vercel</b> hospeda o site do jogo e, como todo servidor, registra dados técnicos de acesso (como endereço IP e tipo de navegador) por um período limitado.</li>
+    <li><b>Google Fonts</b> fornece as fontes do jogo. O Google recebe o endereço IP de quem carrega as fontes.</li>
+    <li><b>PeerJS</b> conecta os jogadores no modo online, como explicado acima.</li>
+  </ul>
+
+  <h2>Permissões do app Android</h2>
+  <ul>
+    <li><b>Internet e estado da rede:</b> para carregar o jogo e jogar online.</li>
+    <li><b>Vibração:</b> para o celular vibrar quando você é atingido ou chega na saída.</li>
+  </ul>
+  <p>O app não acessa câmera, microfone, localização, contatos nem arquivos.</p>
+
+  <h2>Crianças</h2>
+  <p>O jogo tem classificação livre e não pede dados pessoais. Recomendamos que crianças usem o modo online com amigos conhecidos e escolham um apelido que não seja o nome completo.</p>
+
+  <h2>Mudanças nesta política</h2>
+  <p>Se o jogo passar a tratar dados de outra forma, esta página será atualizada com a nova data no topo.</p>
+
+  <a class="back" href="/">◀ Voltar ao jogo</a>
+</main>
+</body>
+</html>
