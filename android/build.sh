@@ -7,10 +7,11 @@
 # todos do Maven Central. O script baixa o que faltar.
 set -euo pipefail
 cd "$(dirname "$0")"
-VERSION_CODE=${VERSION_CODE:-8}
-VERSION_NAME=${VERSION_NAME:-1.7}
+VERSION_CODE=${VERSION_CODE:-9}
+VERSION_NAME=${VERSION_NAME:-1.8}
 KEYSTORE=${KEYSTORE:-fuga-neon.p12}
-KS_PASS=${KS_PASS:-fuganeon}
+# A senha da chave NUNCA fica no Git: rode com  KS_PASS='sua-senha' ./build.sh
+if [ -z "${KS_PASS:-}" ]; then echo "Defina a senha da chave: KS_PASS='...' ./build.sh" >&2; exit 1; fi
 M=https://repo1.maven.org/maven2
 mkdir -p tools build
 [ -f tools/android.jar ] || curl -sSf -o tools/android.jar $M/com/google/android/android/4.1.1.4/android-4.1.1.4.jar
@@ -24,7 +25,7 @@ javac -nowarn --release 8 -cp tools/android.jar:build/stubs -d build/classes src
 java -cp tools/dx.jar com.android.dx.command.Main --dex --min-sdk-version=24 --output=build/classes.dex build/classes
 # 3) ícone e cópia do jogo (usada quando não há internet)
 python3 make_icon.py build/icon.png
-cp ../jogo/index.html ../jogo/peerjs.min.js ../jogo/politica-de-privacidade.html build/assets/
+cp ../jogo/index.html ../jogo/app.js ../jogo/peerjs.min.js ../jogo/politica-de-privacidade.html ../jogo/politica.js build/assets/
 # 4) manifesto, recursos e zip
 python3 build_apk.py build/classes.dex build/icon.png build/assets build/unsigned.apk "$VERSION_CODE" "$VERSION_NAME"
 # 5) chave de assinatura (mantenha a mesma para as atualizações instalarem por cima)
