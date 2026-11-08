@@ -1,4 +1,4 @@
-# Relatório de segurança: Pixel Fuga (v1.8)
+# Relatório de segurança: Pixel Fuga (v2.2)
 
 Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: Segurança Máxima).
 
@@ -13,7 +13,8 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 | Frontend | Sim | Site publicado |
 | Segredos e infraestrutura | Sim | Chave de assinatura, Vercel, GitHub |
 | LGPD, logs e incidentes | Sim (parcial) | Não há servidor próprio nem cadastro |
-| Autenticação, autorização, banco, API, webhooks, pagamentos, uploads, IA | Não se aplica | O jogo não tem login, banco, API própria, cobrança nem upload |
+| Banco e API | Sim (desde a v2.2) | Ranking: tabelas `pixelfuga_*` e a função `pixelfuga-ranking` no Supabase |
+| Autenticação, webhooks, pagamentos, uploads, IA | Não se aplica | O jogo não tem login, cobrança nem upload |
 
 ## 2. Modelo de ameaças (STRIDE)
 
@@ -32,7 +33,9 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 | Progresso e resultados por fase | Interno | Só no aparelho (armazenamento local) |
 | Endereço IP | Pessoal (técnico) | Visto pelos jogadores da sala e pelo serviço de conexão |
 | Nome e chave Pix para o prêmio | Pessoal | Fora do app, na conversa de WhatsApp com o criador |
-| Crianças | Sensível | O jogo tem classificação livre e não pede nenhum dado |
+| Nome, Instagram e fases no ranking | Público (com consentimento) | Banco do ranking, até a pessoa tocar em Sair |
+| Código do aparelho e IP | Pessoal (técnico) | Só como hash SHA-256; o IP serve só para o limite de envios |
+| Crianças | Sensível | Classificação livre; dado pessoal só no ranking, que é opcional |
 
 ## 4. O que foi implementado (por seção)
 
@@ -58,6 +61,14 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 **Apps mobile**
 - Nenhum segredo no APK. Permissões mínimas (internet, estado da rede e vibração). Só HTTPS. O app só navega no site do jogo (o resto abre fora dele). Ponte JavaScript exposta só para "fechar o app".
 
+**Ranking (v2.2)**
+- Tabelas `pixelfuga_players` e `pixelfuga_rate` com RLS ligado e nenhuma política, e `revoke all` para `anon` e `authenticated`: ninguém lê nem grava direto. Só a função `pixelfuga-ranking` (chave de serviço, que fica no servidor) acessa.
+- A função só devolve campos públicos (nunca o código do aparelho), aceita só as origens do jogo, limita o corpo a 2 KB, recusa campos desconhecidos e limita 60 envios a cada 10 minutos por IP (guardado como hash).
+- Nome passa pelo filtro de palavrões e links. Instagram aceita só `a-z 0-9 . _` (até 30), e o link é montado pelo jogo, nunca vem pronto do servidor.
+- Plausibilidade: concluídas ≤ fase atual, desafio ≤ concluídas, tempo mínimo de 3 s por fase e no máximo 2 fases + 1 a cada 20 s desde o último envio. Ninguém desce de posição por um envio.
+- Consentimento explícito na tela e botão **Sair** que apaga a linha. Política de privacidade atualizada.
+- CSP `connect-src` liberando só o endereço do projeto.
+
 **Processo**
 - `SECURITY.md` na raiz e `CLAUDE.md` mandando seguir o padrão em todo código novo.
 
@@ -73,6 +84,7 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 
 | Risco | Nível | Como reduzir |
 |---|---|---|
+| Ranking pode ser inflado por quem forja os envios (a fase vem do aparelho) | Médio | Limites de salto e tempo já existem; remover linhas suspeitas pelo painel do Supabase; no futuro, a mesma validação em servidor do desafio |
 | Desafio R$ 50 decidido no aparelho: quem entende de programação ainda consegue forjar a vitória | **Alto** | Servidor autoritativo (ex.: Supabase Edge Function) que gera a fase, recebe a partida (sequência de movimentos) e reproduz para conferir os 100% antes de liberar o prêmio |
 | Quem cria a sala é o "servidor" da partida e pode trapacear na própria sala | Médio | Servidor de salas próprio decidindo as corridas |
 | IP visível entre jogadores (conexão direta) | Médio | Servidor TURN próprio repassando o tráfego |
@@ -84,18 +96,18 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 
 | Item | Situação |
 |---|---|
-| RLS em 100% das tabelas | N/A: não há banco |
+| RLS em 100% das tabelas | ✅ `pixelfuga_*` com RLS e sem acesso público |
 | Usuário A não lê dado do B | N/A: não há contas; cada progresso fica no próprio aparelho |
-| 403 em rotas de admin | N/A: não há rotas de servidor |
+| 403 em rotas de admin | N/A: a função do ranking não tem rota de admin; origem errada recebe 403 |
 | Nenhum segredo no frontend, no app ou no Git | ✅ (senha da chave removida do script; trocar a senha, item 5.1) |
 | Pontuação e prêmios decididos no servidor | ⚠️ Corridas: checagem de tempo em quem cria a sala. Desafio: ainda no aparelho (risco alto, item 6) |
 | Webhooks assinados | N/A |
-| Rate limit | ✅ Na sala online (não há login nem API) |
+| Rate limit | ✅ Na sala online e na função do ranking (60 por 10 min por IP) |
 | MFA nas contas de infraestrutura | ⏳ Depende de você (item 5.2) |
 | Cabeçalhos de segurança ativos | ✅ `jogo/vercel.json` |
 | Uploads | N/A |
-| Erros sem stack trace e logs sem dados | ✅ Sem logs de depuração em produção |
-| Backup | N/A: não há banco; o código está no Git |
+| Erros sem stack trace e logs sem dados | ✅ A função devolve mensagem genérica com um id e registra só a mensagem do erro |
+| Backup | ⚠️ O plano grátis do Supabase não oferece backup para baixar. Se a tabela se perder, quem está no ranking reenvia a fase sozinho ao jogar; o código e o SQL estão no Git |
 | npm audit | N/A no site (sem dependências instaladas); PeerJS 1.5.4 incluído como arquivo |
 | Política de privacidade publicada | ✅ (fornecedores: item 5.5) |
 | Alertas | N/A: não há servidor próprio |

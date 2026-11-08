@@ -33,7 +33,7 @@ function publicText(s, n){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait'];
+const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -1048,6 +1048,7 @@ function onRunnerFinish(r){
     const n = game.soloLevel, best = store.get('ultraBest', {}), prev = best[n];
     if (!prev || r.time < prev) best[n] = Math.round(r.time * 10) / 10;
     store.set('ultraBest', best); store.set('ultraMax', Math.max(store.get('ultraMax', 1), Math.min(ULTRA_LEVELS, n + 1)));
+    rankSync(true);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
       game.phase = 'solodone';
@@ -1062,6 +1063,7 @@ function onRunnerFinish(r){
     $('#btNext').hidden = false;
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
     recordLevel(game.soloLevel, r);
+    rankSync(true);
     const L = game.level, pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
@@ -1614,7 +1616,7 @@ function openPause(){
 /* ============================== telas ============================== */
 const MAX_LEVEL = 100;
 function refreshMenu(){
-  refreshPrize();
+  refreshPrize(); updateRankSub(); rankSync(false);
   const n = Math.min(soloMax(), store.get('soloLast', 1));
   $('#soloSub').textContent = 'Fase ' + n + ' · Mundo ' + (worldIdx(n) + 1) + ': ' + WORLDS[worldIdx(n)].name;
 }
@@ -1671,6 +1673,128 @@ function buildLegend(){
   ];
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const m = /^<b>(.*?)<\/b>\s*(.*)$/.exec(html); return [h('img', { src, alt: '' }), h('span', null, h('b', null, m ? m[1] : ''), m ? ' ' + m[2] : html)]; }));
 }
+/* ============================== ranking ============================== */
+// Lista pública com nome, Instagram e fase de cada jogador. Só entra quem preenche e aceita.
+const RANK_URL = 'https://vpldivsicywvnvyczkhz.supabase.co/functions/v1/pixelfuga-ranking';
+const IG_RE = /^[a-z0-9._]{1,30}$/;
+function deviceId(){
+  let d = store.get('dev', '');
+  if (typeof d !== 'string' || !/^[A-Za-z0-9_-]{20,100}$/.test(d)){
+    const b = new Uint8Array(24); crypto.getRandomValues(b);
+    d = btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    store.set('dev', d);
+  }
+  return d;
+}
+function igHandle(s){
+  const t = String(s || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/^@/, '').replace(/[/?#].*$/, '');
+  return IG_RE.test(t) && !/^\.|\.$|\.\./.test(t) ? t : null;
+}
+function rankProgress(){
+  const c = loadCamp(); let done = 0, t = 0;
+  for (const k in c.l){ done++; t += +c.l[k][0] || 0; }
+  return { current_level: Math.min(1000, Math.max(1, soloMax())), levels_done: Math.min(1000, done), challenge_levels: campDone(c),
+    ultra_done: Math.min(10, Object.keys(store.get('ultraBest', {})).length), total_time_s: Math.min(1e8, Math.round(t)) };
+}
+async function rankCall(body){
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 9000);
+  try{
+    const res = await fetch(RANK_URL, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal: ac.signal } : { signal: ac.signal, cache: 'no-store' });
+    let data = null; try{ data = await res.json(); }catch(_){}
+    return { ok: res.ok, status: res.status, data: data || {} };
+  }catch(e){ return { ok: false, status: 0, data: { error: 'Sem conexão. Confira a internet e tente de novo.' } }; }
+  finally{ clearTimeout(to); }
+}
+const rankReg = () => { const r = store.get('rankReg', null); return r && typeof r.name === 'string' && igHandle(r.instagram) ? r : null; };
+let rankBusy = false, rankLast = 0;
+// manda a fase atual sozinho (depois de cada fase e ao abrir o menu, no máximo a cada 20 s)
+async function rankSync(force){
+  const reg = rankReg(); if (!reg || rankBusy || (!force && Date.now() - rankLast < 20000)) return null;
+  rankBusy = true; rankLast = Date.now();
+  try{
+    const r = await rankCall({ device: deviceId(), action: 'save', name: reg.name, instagram: reg.instagram, progress: rankProgress() });
+    if (r.ok){ store.set('rankPos', r.data.pos || null); updateRankSub(); }
+    return r;
+  } finally { rankBusy = false; }
+}
+function updateRankSub(){
+  const reg = rankReg(), pos = store.get('rankPos', null);
+  $('#rankSub').textContent = reg && pos ? 'Você está em ' + pos + 'º lugar' : reg ? 'Você está no ranking' : 'Veja em que fase cada um está';
+}
+function rankRow(r, mine){
+  const ig = igHandle(r.instagram), pos = Number.isInteger(r.pos) ? r.pos : null;
+  const sub = [r.levels_done + (r.levels_done === 1 ? ' concluída' : ' concluídas')];
+  if (r.challenge_levels) sub.push(r.challenge_levels + ' no desafio');
+  if (r.ultra_done) sub.push(r.ultra_done + ' ultra');
+  return h('div', { class: 'rrow' + (pos && pos <= 3 ? ' top' : '') + (mine ? ' me' : '') },
+    h('span', { class: 'pos' }, pos ? pos + 'º' : '-'),
+    h('div', { class: 'who' },
+      h('span', { class: 'nm' }, String(r.name || ''), r.won ? h('span', { class: 'pill yes' }, 'R$ 50') : null),
+      ig ? h('a', { class: 'ig', href: 'https://www.instagram.com/' + ig + '/', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Instagram de ' + r.name + ': @' + ig }, '@' + ig) : null),
+    h('span', { class: 'lv' }, 'Fase ' + r.current_level),
+    h('span', { class: 'sub' }, sub.join(' · ')));
+}
+async function loadRanking(){
+  const list = $('#rkList');
+  list.replaceChildren(h('p', { class: 'note' }, 'Carregando…'));
+  const r = await rankCall(null);
+  if (!r.ok || !Array.isArray(r.data.rows)){
+    list.replaceChildren(h('p', { class: 'note err' }, r.data.error || 'Não consegui carregar o ranking. Tente de novo.'));
+    return;
+  }
+  const mine = rankReg();
+  $('#rkTotal').textContent = r.data.total === 1 ? '1 jogador' : (r.data.total || 0) + ' jogadores';
+  list.replaceChildren(...(r.data.rows.length ? r.data.rows.map(x => rankRow(x, mine && x.instagram === mine.instagram))
+    : [h('p', { class: 'note' }, 'Ninguém entrou ainda. Seja o primeiro!')]));
+}
+function rankForm(open){
+  const reg = rankReg();
+  $('#rkForm').hidden = !open; $('#rkStatus').hidden = open || !reg; $('#rkErr').hidden = true;
+  $('#rkCancel').hidden = !reg;
+  if (open){
+    $('#rkName').value = reg ? reg.name : clean(store.get('name', ''), 20);
+    $('#rkIg').value = reg ? '@' + reg.instagram : '';
+    $('#rkOk').checked = !!reg;
+    $('#rkSave').textContent = reg ? 'Salvar' : 'Entrar no ranking';
+  } else if (reg){
+    const pos = store.get('rankPos', null), p = rankProgress();
+    $('#rkStatusText').textContent = reg.name + ' (@' + reg.instagram + ')' + (pos ? ', ' + pos + 'º lugar' : '') + '. Fase ' + p.current_level + ', ' + p.levels_done + ' concluídas.';
+  }
+}
+function rankError(msg){ const e = $('#rkErr'); e.textContent = msg; e.hidden = false; }
+async function openRanking(){
+  show('scrRank'); $('#scrRank').scrollTop = 0;
+  rankForm(!rankReg());
+  loadRanking();
+  if (rankReg()){
+    const r = await rankSync(true);
+    if (r && r.ok){ rankForm(false); loadRanking(); }
+    else if (r && r.status === 409){ store.set('rankReg', null); rankForm(true); rankError(r.data.error); }
+  }
+}
+$('#rkForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = publicText($('#rkName').value, 20), ig = igHandle($('#rkIg').value);
+  if (name.length < 2) return rankError('Digite um nome com pelo menos 2 letras.');
+  if (!ig) return rankError('Instagram inválido. Use só o usuário, por exemplo @seunome.');
+  if (!$('#rkOk').checked) return rankError('Marque que concorda em aparecer no ranking.');
+  const bt = $('#rkSave'); bt.disabled = true; bt.textContent = 'Enviando…';
+  const r = await rankCall({ device: deviceId(), action: 'save', name, instagram: ig, progress: rankProgress() });
+  bt.disabled = false;
+  if (!r.ok){ rankForm(true); $('#rkName').value = name; $('#rkIg').value = '@' + ig; $('#rkOk').checked = true; return rankError(r.data.error || 'Não deu certo. Tente de novo.'); }
+  store.set('rankReg', { name: r.data.name || name, instagram: r.data.instagram || ig }); store.set('rankPos', r.data.pos || null);
+  rankLast = Date.now(); rankForm(false); updateRankSub(); loadRanking(); toast('Pronto! Você está no ranking.');
+});
+$('#rkEdit').addEventListener('click', () => rankForm(true));
+$('#rkCancel').addEventListener('click', () => rankForm(false));
+$('#rkLeave').addEventListener('click', async () => {
+  if (!confirm('Sair do ranking? Seu nome e seu Instagram serão apagados da lista.')) return;
+  const r = await rankCall({ device: deviceId(), action: 'delete' });
+  if (!r.ok) return toast(r.data.error || 'Não deu certo. Tente de novo.');
+  store.set('rankReg', null); store.set('rankPos', null); rankForm(true); updateRankSub(); loadRanking(); toast('Você saiu do ranking.');
+});
+$('#rkReload').addEventListener('click', loadRanking);
+$('#btRank').addEventListener('click', openRanking);
 $('#inName').value = store.get('name', '');
 $('#inName').addEventListener('change', () => store.set('name', clean($('#inName').value, 14)));
 $('#btPlay').addEventListener('click', () => { sfx('start'); show('scrMenu'); refreshMenu(); });
@@ -1711,7 +1835,7 @@ window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
-  if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow' || vis === 'scrUltra'){ show('scrMenu'); refreshMenu(); return true; }
+  if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow' || vis === 'scrUltra' || vis === 'scrRank'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
   return false;

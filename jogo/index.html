@@ -151,6 +151,23 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .big.ultra{background:#f3ecdc;color:#b23a1a;border-color:#000}
 .big.ultra small{color:#5a2a14}
 .levels button.perfect{background:var(--lime);color:var(--ink)}
+/* ranking */
+.big.rankb{background:var(--lav);color:#fff}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 10px;font-variant-numeric:tabular-nums}
+.rrow.me{border-color:var(--gold)}
+.rrow .pos{font-family:var(--pixel);font-size:11px;color:var(--muted);grid-row:1/3}
+.rrow.top .pos{color:var(--gold)}
+.rrow .who{min-width:0;display:flex;flex-direction:column}
+.rrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px;line-height:1.05}
+.rrow .ig{color:var(--pink);font-size:19px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;padding:2px 0}
+.rrow .ig:hover,.rrow .ig:focus-visible{text-decoration:underline;outline:none}
+.rrow .lv{text-align:right;font-size:22px;line-height:1.05;white-space:nowrap;color:var(--gold)}
+.rrow .sub{grid-column:2/4;color:var(--muted);font-size:17px;line-height:1.05;margin-top:-4px}
+.rrow .pill{margin-left:6px;vertical-align:2px}
+label.ck{display:flex;gap:10px;align-items:flex-start;font-size:19px;line-height:1.15;color:var(--muted);cursor:pointer}
+label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:var(--gold)}
+.err{color:var(--pink)}
 @media (prefers-reduced-motion:reduce){.press{animation:none}button:active,a.btn:active{transform:none}}
 </style>
 </head>
@@ -164,7 +181,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
-    <p class="ver">v2.1 · 100 fases + Ultra Labirinto</p>
+    <p class="ver">v2.2 · 100 fases + Ranking</p>
     <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
@@ -206,6 +223,7 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
       </div>
       <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
+    <button class="big rankb" id="btRank">Ranking<small id="rankSub">Veja em que fase cada um está</small></button>
     <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 15 perigos</small></button>
     <button class="ghost" id="btToTitle">Tela inicial</button>
   </div>
@@ -231,6 +249,35 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
     <h2>Ultra Labirinto</h2>
     <p class="note">Um labirinto gigante, inteiro na tela, e um bonequinho pequeno. Deslize para andar: ele para em cada cruzamento para você escolher o caminho e deixa um rastro por onde já passou. Você começa embaixo e a saída pisca no alto. Cada fase tem um visual diferente.</p>
     <div class="card"><h3>Fases</h3><div class="levels" id="ultraGrid"></div><p class="note" id="ultraNote"></p></div>
+    <button class="ghost" data-back>Voltar</button>
+  </div>
+</section>
+
+<!-- RANKING -->
+<section class="screen" id="scrRank" hidden>
+  <div class="wrap">
+    <h2>Ranking</h2>
+    <p class="note">Todos os jogadores do modo sozinho, do mais adiantado para o menos. Toque no @ para abrir o Instagram da pessoa.</p>
+    <div class="card" id="rkMe">
+      <h3>Você no ranking</h3>
+      <div id="rkStatus" style="display:flex;flex-direction:column;gap:12px" hidden>
+        <p class="note" id="rkStatusText"></p>
+        <div class="row"><button class="main grow" id="rkEdit">Mudar dados</button><button class="ghost grow" id="rkLeave">Sair</button></div>
+      </div>
+      <form id="rkForm" style="display:flex;flex-direction:column;gap:12px" novalidate>
+        <p class="note">Coloque seu nome e seu Instagram para aparecer no ranking. Sua fase é atualizada sozinha enquanto você joga.</p>
+        <label class="f">Nome<input id="rkName" maxlength="20" autocomplete="nickname" placeholder="Seu nome" required></label>
+        <label class="f">Instagram<input id="rkIg" maxlength="60" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@seuperfil" inputmode="email" required></label>
+        <label class="ck"><input type="checkbox" id="rkOk"><span>Concordo em mostrar meu nome, meu Instagram e minhas fases para todos no ranking. Posso sair quando quiser.</span></label>
+        <p class="note err" id="rkErr" role="alert" hidden></p>
+        <button class="main" id="rkSave" type="submit">Entrar no ranking</button>
+        <button class="ghost" id="rkCancel" type="button" hidden>Cancelar</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="row"><h3 class="grow" id="rkTotal">Jogadores</h3><button class="small" id="rkReload">Atualizar</button></div>
+      <div class="rlist" id="rkList" aria-live="polite"></div>
+    </div>
     <button class="ghost" data-back>Voltar</button>
   </div>
 </section>
