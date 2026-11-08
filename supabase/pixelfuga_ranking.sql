@@ -39,3 +39,12 @@ create trigger pixelfuga_players_updated_at before update on public.pixelfuga_pl
 
 -- v2.3: o Instagram saiu do ranking (só o apelido aparece). Em bancos antigos:
 alter table public.pixelfuga_players drop column if exists instagram;
+
+-- v2.4: cópia do progresso (código de recuperação). Mesmas regras: RLS sem policies, sem acesso público.
+create table if not exists public.pixelfuga_saves (
+  device_hash text primary key check (char_length(device_hash) = 64),
+  data        jsonb not null check (pg_column_size(data) < 16000),
+  updated_at  timestamptz not null default now()
+);
+alter table public.pixelfuga_saves enable row level security;
+revoke all on public.pixelfuga_saves from anon, authenticated;

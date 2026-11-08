@@ -1,4 +1,4 @@
-# Pixel Fuga
+# Pixel Lab (antigo Pixel Fuga)
 
 Siga o SECURITY.md em todo código deste projeto.
 

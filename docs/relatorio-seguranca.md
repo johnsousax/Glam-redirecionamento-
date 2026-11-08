@@ -1,4 +1,4 @@
-# Relatório de segurança: Pixel Fuga (v2.3)
+# Relatório de segurança: Pixel Lab, antigo Pixel Fuga (v2.4)
 
 Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: Segurança Máxima).
 
@@ -69,6 +69,12 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 - Plausibilidade: concluídas ≤ fase atual, desafio ≤ concluídas, tempo mínimo de 3 s por fase e no máximo 2 fases + 1 a cada 20 s desde o último envio. Ninguém desce de posição por um envio.
 - Aviso no campo do apelido e na política de privacidade. Para sair, a pessoa pede pelo Instagram do criador (dá para apagar a linha no painel do Supabase).
 - CSP `connect-src` liberando só o endereço do projeto.
+
+**Cópia do progresso (v2.4)**
+- Tabela `pixelfuga_saves` com as mesmas regras (RLS sem policies, `revoke all`). Só a função grava e lê.
+- O código de recuperação é o código aleatório do aparelho (24 bytes, `crypto.getRandomValues`); no banco fica só o SHA-256. Tentar adivinhar é inviável e ainda cai no limite de 60 tentativas a cada 10 minutos por IP.
+- A cópia aceita só chaves conhecidas e no máximo 6 KB. Ao recuperar, o jogo confere cada valor antes de juntar com o que já existe no aparelho.
+- "Entrar com Google" ficou de fora: o login do Supabase do projeto "Fluxo zero" é o mesmo do seu CRM, e colocar jogadores lá poderia dar acesso a dados do CRM. Para ter Google, é preciso um Client ID do Google próprio do jogo, validado pela função (sem usar o login do CRM).
 
 **Processo**
 - `SECURITY.md` na raiz e `CLAUDE.md` mandando seguir o padrão em todo código novo.

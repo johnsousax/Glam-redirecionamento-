@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Pixel Fuga",
-  "short_name": "Pixel Fuga",
-  "description": "Labirinto em pixel art: deslize, desvie dos perigos e fuja antes dos amigos.",
+  "name": "Pixel Lab",
+  "short_name": "Pixel Lab",
+  "description": "Pixel Lab: labirinto de pixel 8-bit. Deslize, desvie dos perigos e chegue antes dos amigos.",
   "lang": "pt-BR",
   "dir": "ltr",
   "start_url": "/",

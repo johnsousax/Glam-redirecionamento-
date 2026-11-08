@@ -1,11 +1,12 @@
-// Ranking do Pixel Fuga.
+// Ranking e cópia do progresso do Pixel Lab (antigo Pixel Fuga).
 // GET  -> lista pública (top 100): apelido, fase atual, fases concluídas, fases do desafio.
-// POST -> { device, action: 'save' | 'me' | 'delete', name?, progress? }
+// POST -> { device, action: 'save' | 'me' | 'delete' | 'backup' | 'restore', name?, progress?, data? }
+//   backup/restore: cópia do progresso do aparelho. O código do aparelho funciona como código de recuperação.
 // Só esta função toca nas tabelas pixelfuga_* (service role). As tabelas não têm acesso público.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = ["https://pixelfuga.vercel.app", "https://fuga-neon.vercel.app"];
-const MAX_BODY = 2000;
+const MAX_BODY = 8000, MAX_SAVE = 6000;
 const RATE_WINDOW_MS = 10 * 60 * 1000, RATE_MAX = 60;
 const BAD_WORDS = new Set(["porra","caralho","merda","puta","puto","putaria","fdp","viado","buceta","arrombado","arrombada","cuzao","foder","fodase","foda","fodido","vagabunda","vagabundo","corno","piranha","bosta","desgracado","desgracada","otario","otaria","babaca","vadia","cacete","pqp","vsf","vtnc","krl","prr"]);
 const RANK_ORDER: [string, boolean][] = [["current_level", false], ["levels_done", false], ["challenge_levels", false], ["total_time_s", true], ["created_at", true]];
@@ -83,7 +84,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   try { body = JSON.parse(raw); } catch { return reply(h, 400, { error: "Dados inválidos." }); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return reply(h, 400, { error: "Dados inválidos." });
   // "instagram" ainda é aceito (e ignorado) para versões antigas do jogo guardadas no aparelho
-  const allowed = new Set(["device", "action", "name", "instagram", "progress"]);
+  const allowed = new Set(["device", "action", "name", "instagram", "progress", "data"]);
   if (Object.keys(body).some((k) => !allowed.has(k))) return reply(h, 400, { error: "Dados inválidos." });
   if (typeof body.device !== "string" || !/^[A-Za-z0-9_-]{20,100}$/.test(body.device)) return reply(h, 400, { error: "Aparelho inválido." });
   const deviceHash = await sha256("pxf-dev|" + body.device);
@@ -99,8 +100,26 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
     .eq("device_hash", deviceHash).maybeSingle();
   if (prevErr) throw prevErr;
 
+  if (body.action === "backup") {
+    const d = body.data;
+    if (!d || typeof d !== "object" || Array.isArray(d)) return reply(h, 400, { error: "Dados inválidos." });
+    const okKeys = new Set(["v", "soloMax", "soloLast", "ultraMax", "ultraBest", "camp", "name", "prizeSeen"]);
+    if (Object.keys(d).some((k) => !okKeys.has(k))) return reply(h, 400, { error: "Dados inválidos." });
+    const text = JSON.stringify(d);
+    if (text.length > MAX_SAVE) return reply(h, 413, { error: "Dados grandes demais." });
+    const { error } = await db.from("pixelfuga_saves").upsert({ device_hash: deviceHash, data: d, updated_at: new Date(now).toISOString() });
+    if (error) throw error;
+    return reply(h, 200, { ok: true });
+  }
+  if (body.action === "restore") {
+    const { data, error } = await db.from("pixelfuga_saves").select("data, updated_at").eq("device_hash", deviceHash).maybeSingle();
+    if (error) throw error;
+    if (!data) return reply(h, 404, { error: "Não achei progresso com esse código. Confira e tente de novo." });
+    return reply(h, 200, { ok: true, data: data.data, updated_at: data.updated_at });
+  }
   if (body.action === "delete") {
     await db.from("pixelfuga_players").delete().eq("device_hash", deviceHash);
+    await db.from("pixelfuga_saves").delete().eq("device_hash", deviceHash);
     return reply(h, 200, { ok: true });
   }
   if (body.action === "me") {

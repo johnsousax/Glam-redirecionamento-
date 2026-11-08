@@ -33,8 +33,8 @@ function publicText(s, n){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank'];
-function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); if (id === 'scrMenu'){ const w = $('#scrMenu .wrap'); w.classList.remove('enter'); void w.offsetWidth; w.classList.add('enter'); } }
+const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank','scrSettings'];
+function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); const stk = $('#stick'); if (stk) stk.hidden = true; if (id === 'scrMenu'){ const w = $('#scrMenu .wrap'); w.classList.remove('enter'); void w.offsetWidth; w.classList.add('enter'); } }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function mix(a, b, t){ const A = hexRgb(a), B = hexRgb(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
@@ -48,6 +48,7 @@ function tone(f0, f1, dur, type, vol, delay = 0){
   o.connect(g); g.connect(AC.destination); o.start(now); o.stop(now + dur + .02);
 }
 function sfx(kind){
+  if (store.get('mute', false)) return;
   try{
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     if (AC.state === 'suspended') AC.resume();
@@ -67,7 +68,7 @@ function sfx(kind){
     if (kind === 'paint') return tone(880 + Math.random() * 300, 900, .025, 'square', .012);
   }catch(e){}
 }
-const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+const buzz = ms => { if (store.get('novib', false)) return; try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
 
 /* ============================== fonte de pixels 5x7 ============================== */
 const GLYPH = {};
@@ -346,7 +347,10 @@ function genLevel(idx, seed){
       const c = [...an.trav.keys()].filter(t => !an.seen.has(t) && !special(t));
       if (c.length < 2) break;
       const A = c[Math.floor(R() * c.length)];
-      const far = c.filter(t => Math.abs(t % w - A % w) + Math.abs(((t / w) | 0) - ((A / w) | 0)) >= 12);
+      // quem entra num portal sai do outro na mesma direção: só liga portais em que dá para seguir em frente
+      const open = (t, d) => { const x = t % w + DIRS[d][0], y = ((t / w) | 0) + DIRS[d][1]; return x >= 0 && y >= 0 && x < w && y < h && L.grid[y * w + x] !== WALL; };
+      const fits = (a, b) => [0, 1, 2, 3].every(d => (!open(a, (d + 2) % 4) || open(b, d)) && (!open(b, (d + 2) % 4) || open(a, d)));
+      const far = c.filter(t => Math.abs(t % w - A % w) + Math.abs(((t / w) | 0) - ((A / w) | 0)) >= 12 && fits(A, t));
       if (!far.length) continue;
       const B = far[Math.floor(R() * far.length)];
       L.tele[A] = B; L.tele[B] = A;
@@ -1023,7 +1027,7 @@ function prizeCode(c, name){
 function prizeTotals(c){ let t = 0, d = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]){ t += c.l[i][0]; d += c.l[i][1]; } return { t, d }; }
 function updatePrizeLink(){
   const c = loadCamp(), name = clean($('#pzName').value, 30) || myName(), code = prizeCode(c, name), tot = prizeTotals(c);
-  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Fuga com pelo menos 90% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
+  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Lab com pelo menos 90% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
     + 'Nome: ' + name + '\nTempo somado: ' + fmtTime(tot.t) + '\nVoltas ao início: ' + tot.d + '\nCódigo: ' + code;
   $('#pzWa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
   $('#pzCode2').textContent = code;
@@ -1048,7 +1052,7 @@ function onRunnerFinish(r){
     const n = game.soloLevel, best = store.get('ultraBest', {}), prev = best[n];
     if (!prev || r.time < prev) best[n] = Math.round(r.time * 10) / 10;
     store.set('ultraBest', best); store.set('ultraMax', Math.max(store.get('ultraMax', 1), Math.min(ULTRA_LEVELS, n + 1)));
-    rankSync(true);
+    rankSync(true); cloudBackup(true);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
       game.phase = 'solodone';
@@ -1063,7 +1067,7 @@ function onRunnerFinish(r){
     $('#btNext').hidden = false;
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
     recordLevel(game.soloLevel, r);
-    rankSync(true);
+    rankSync(true); cloudBackup(true);
     const L = game.level, pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
     setTimeout(() => {
       if (game.mode !== 'solo') return;
@@ -1474,7 +1478,7 @@ function render(){
 const tcv = $('#tcv'), tg = tcv.getContext('2d');
 const title = { cells: [], t: 0, STEP: .028, stars: [], floor: null, lastK: 0 };
 (function buildTitle(){
-  [['PIXEL', 10, P.gold], ['FUGA', 44, P.teal]].forEach(([word, y0, col]) => {
+  [['PIXEL', 10, P.gold], ['LAB', 44, P.teal]].forEach(([word, y0, col]) => {
     const x0 = Math.floor((136 - (word.length * 6 - 1) * 4) / 2);
     [...word].forEach((ch, i) => {
       const gl = GLYPH[ch], pts = [];
@@ -1567,6 +1571,7 @@ function frame(t){
 
 /* ============================== controles ============================== */
 const touches = new Map();
+const ctrlMode = () => store.get('ctrl', 'swipe') === 'stick' ? 'stick' : 'swipe';
 function toLocal(vp, ax, ay){ return vp.rot ? [vp.w - (ax - vp.x), vp.h - (ay - vp.y)] : [ax - vp.x, ay - vp.y]; }
 function vpAt(ax, ay){ for (const vp of (game.vps || [])) if (ax >= vp.x && ax < vp.x + vp.w && ay >= vp.y && ay < vp.y + vp.h) return vp; return null; }
 const artXY = e => [e.clientX * DPR / K, e.clientY * DPR / K];
@@ -1575,11 +1580,25 @@ cv.addEventListener('pointerdown', e => {
   const [ax, ay] = artXY(e), vp = vpAt(ax, ay); if (!vp) return;
   try{ cv.setPointerCapture(e.pointerId); }catch(_){}
   const [lx, ly] = toLocal(vp, ax, ay);
-  touches.set(e.pointerId, { vp, sx: lx, sy: ly, ox: lx, oy: ly, moved: false });
+  touches.set(e.pointerId, { vp, sx: lx, sy: ly, ox: lx, oy: ly, moved: false, cx: e.clientX, cy: e.clientY });
+  if (ctrlMode() === 'stick'){ const st = $('#stick'); st.style.left = e.clientX + 'px'; st.style.top = e.clientY + 'px'; st.firstChild.style.transform = ''; st.hidden = false; }
   if (AC == null) sfx('none');
 });
 cv.addEventListener('pointermove', e => {
   const tc = touches.get(e.pointerId); if (!tc) return;
+  if (ctrlMode() === 'stick'){
+    // bolinha: a direção é para onde a bolinha está em relação ao centro (o centro não anda)
+    let dx = e.clientX - tc.cx, dy = e.clientY - tc.cy; const dist = Math.hypot(dx, dy), R = 40;
+    if (tc.vp.rot){ dx = -dx; dy = -dy; }
+    const k = dist > R ? R / dist : 1; $('#stick').firstChild.style.transform = 'translate(' + (e.clientX - tc.cx) * k + 'px,' + (e.clientY - tc.cy) * k + 'px)';
+    if (dist < 12){ tc.lastD = null; return; }
+    if (dist > 18){
+      const d = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+      if (game.countdown <= 0 && d !== tc.lastD){ tc.vp.r.swipe(d); tc.lastD = d; }
+      tc.moved = true;
+    }
+    return;
+  }
   const [ax, ay] = artXY(e), [lx, ly] = toLocal(tc.vp, ax, ay);
   const dx = lx - tc.sx, dy = ly - tc.sy, TH = 20 * DPR / K;
   if (Math.hypot(dx, dy) > TH){
@@ -1590,13 +1609,13 @@ cv.addEventListener('pointermove', e => {
   }
 });
 function endTouch(e){
-  const tc = touches.get(e.pointerId); touches.delete(e.pointerId); if (!tc || tc.moved) return;
+  const tc = touches.get(e.pointerId); touches.delete(e.pointerId); if (!touches.size) $('#stick').hidden = true; if (!tc || tc.moved) return;
   const vp = tc.vp, x = tc.ox, y = tc.oy, inR = b => b && x >= b[0] && y >= b[1] && x < b[2] && y < b[3];
   if (inR(vp.btnPause)) openPause();
   else if (inR(vp.btnRestart) && game.countdown <= 0){ const r = vp.r; if (!r.finished && r.dead <= 0) r.kill(true); }
 }
 cv.addEventListener('pointerup', endTouch);
-cv.addEventListener('pointercancel', e => touches.delete(e.pointerId));
+cv.addEventListener('pointercancel', e => { touches.delete(e.pointerId); if (!touches.size) $('#stick').hidden = true; });
 addEventListener('keydown', e => {
   if (!$('#scrTitle').hidden && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); $('#btPlay').click(); return; }
   if (game.phase !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1616,7 +1635,7 @@ function openPause(){
 /* ============================== telas ============================== */
 const MAX_LEVEL = 100;
 function refreshMenu(){
-  refreshPrize(); updateRankMe(); rankSync(false).then(r => { if (r && r.ok) loadTop(true); }); loadTop(false);
+  refreshPrize(); updateRankMe(); cloudBackup(false); rankSync(false).then(r => { if (r && r.ok) loadTop(true); }); loadTop(false);
   const n = Math.min(soloMax(), store.get('soloLast', 1));
   $('#soloSub').textContent = 'Fase ' + n + ' · Mundo ' + (worldIdx(n) + 1) + ': ' + WORLDS[worldIdx(n)].name;
 }
@@ -1804,6 +1823,86 @@ async function openRanking(){
 }
 $('#rkReload').addEventListener('click', loadRanking);
 $('#btRankAll').addEventListener('click', openRanking);
+/* ============================== configurações ============================== */
+const CTRL_NOTES = {
+  swipe: 'Deslizar: passe o dedo para cima, baixo, esquerda ou direita em qualquer lugar da tela.',
+  stick: 'Bolinha: encoste o dedo na tela e uma bolinha aparece. Arraste a bolinha para o lado que quer ir, sem tirar o dedo, como no controle do videogame.'
+};
+function segSet(id, v){ for (const b of $(id).querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === v)); }
+function renderSettings(){
+  segSet('#segSound', store.get('mute', false) ? 'off' : 'on');
+  segSet('#segVib', store.get('novib', false) ? 'off' : 'on');
+  segSet('#segCtrl', ctrlMode()); $('#ctrlNote').textContent = CTRL_NOTES[ctrlMode()];
+  const code = deviceId();
+  $('#svCode').textContent = code.match(/.{1,4}/g).join(' ');
+  $('#svWa').href = 'https://wa.me/?text=' + encodeURIComponent('Meu código de recuperação do Pixel Lab (não mostre para ninguém):\n' + code);
+}
+let settingsFrom = 'scrMenu';
+function openSettings(from){
+  settingsFrom = from; renderSettings(); show('scrSettings'); $('#scrSettings').scrollTop = 0;
+  $('#svStatus').textContent = 'Salvando na nuvem…';
+  cloudBackup(true).then(r => { $('#svStatus').textContent = r && r.ok ? 'Progresso salvo na nuvem agora.' : 'Sem conexão: o progresso será salvo quando a internet voltar.'; });
+}
+function closeSettings(){ if (settingsFrom === 'scrPause') show('scrPause'); else { show('scrMenu'); refreshMenu(); } }
+$('#segSound').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.set('mute', b.dataset.v === 'off'); renderSettings(); sfx('go'); });
+$('#segVib').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.set('novib', b.dataset.v === 'off'); renderSettings(); buzz(40); });
+$('#segCtrl').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; store.set('ctrl', b.dataset.v); renderSettings(); });
+$('#btSettings').addEventListener('click', () => openSettings('scrMenu'));
+$('#btPauseSettings').addEventListener('click', () => openSettings('scrPause'));
+$('#btSettingsBack').addEventListener('click', closeSettings);
+$('#svCopy').addEventListener('click', () => navigator.clipboard?.writeText(deviceId()).then(() => toast('Código copiado. Guarde num lugar seguro.'), () => toast('Segure o código para copiar.')));
+
+// cópia do progresso na nuvem (o código do aparelho é o código de recuperação)
+const SAVE_KEYS = ['soloMax', 'soloLast', 'ultraMax', 'ultraBest', 'camp', 'name', 'prizeSeen'];
+function saveSnapshot(){
+  const d = { v: 1 }; for (const k of SAVE_KEYS){ const v = store.get(k, null); if (v != null) d[k] = v; }
+  d.camp = loadCamp(); return d;
+}
+let lastBackup = 0, backupBusy = false;
+async function cloudBackup(force){
+  if (backupBusy || (!force && Date.now() - lastBackup < 20000)) return null;
+  backupBusy = true; lastBackup = Date.now();
+  try{ return await rankCall({ device: deviceId(), action: 'backup', data: saveSnapshot() }); } finally { backupBusy = false; }
+}
+const posInt = (v, max) => Number.isInteger(v) && v >= 1 && v <= max ? v : 0;
+// junta o progresso salvo com o do aparelho, ficando sempre com o melhor de cada fase
+function mergeSave(d){
+  if (!d || typeof d !== 'object') return false;
+  store.set('soloMax', Math.max(soloMax(), posInt(d.soloMax, 1000)));
+  store.set('ultraMax', Math.max(store.get('ultraMax', 1), posInt(d.ultraMax, ULTRA_LEVELS)));
+  if (posInt(d.soloLast, 1000)) store.set('soloLast', Math.min(soloMax(), d.soloLast));
+  const ub = store.get('ultraBest', {});
+  if (d.ultraBest && typeof d.ultraBest === 'object') for (const k in d.ultraBest){
+    const n = +k, t = +d.ultraBest[k]; if (posInt(n, ULTRA_LEVELS) && t > 0 && t < 1e5 && (!ub[n] || t < ub[n])) ub[n] = Math.round(t * 10) / 10;
+  }
+  store.set('ultraBest', ub);
+  const c = loadCamp();
+  if (d.camp && d.camp.l && typeof d.camp.l === 'object') for (const k in d.camp.l){
+    const n = +k, e = d.camp.l[k];
+    if (!posInt(n, 1000) || !Array.isArray(e) || e.length < 3) continue;
+    const cur = [+e[0] || 0, Math.max(0, e[1] | 0), Math.min(100, Math.max(0, e[2] | 0))], old = c.l[n];
+    if (cur[0] < 2) continue;
+    if (!old || (old[2] || 0) < cur[2] || ((old[2] || 0) === cur[2] && cur[0] < old[0])) c.l[n] = cur;
+  }
+  saveCamp(c);
+  if (typeof d.name === 'string' && !store.get('name', '')) store.set('name', clean(d.name, 14));
+  if (d.prizeSeen) store.set('prizeSeen', true);
+  return true;
+}
+$('#svLoad').addEventListener('click', async () => {
+  const code = $('#svIn').value.replace(/[\s-]+/g, '');
+  if (!/^[A-Za-z0-9_-]{20,100}$/.test(code)) return toast('Código inválido. Confira e tente de novo.');
+  if (code === deviceId()) return toast('Esse já é o código deste aparelho.');
+  const bt = $('#svLoad'); bt.disabled = true;
+  const r = await rankCall({ device: code, action: 'restore' });
+  bt.disabled = false;
+  if (!r.ok) return toast(r.data.error || 'Não deu certo. Tente de novo.');
+  if (!confirm('Achei o progresso! Juntar com o deste aparelho? Este celular passa a usar esse código e a mesma linha no ranking.')) return;
+  mergeSave(r.data.data); store.set('dev', code); store.set('rankPos', null);
+  $('#inName').value = store.get('name', ''); $('#svIn').value = '';
+  renderSettings(); cloudBackup(true); rankSync(true).then(() => loadTop(true));
+  toast('Progresso recuperado! Fase ' + soloMax() + ' liberada.');
+});
 $('#inName').value = store.get('name', '');
 $('#inName').addEventListener('animationend', e => e.target.classList.remove('shake'));
 $('#inName').addEventListener('change', async () => {
@@ -1838,16 +1937,17 @@ $('#btQuit').addEventListener('click', () => toMenu());
 const PUBLIC_URL = 'https://pixelfuga.vercel.app/';
 function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
 $('#btCopy').addEventListener('click', () => {
-  const txt = 'Bora jogar Pixel Fuga! Código da sala: ' + game.code + ' — ' + inviteLink();
+  const txt = 'Bora jogar Pixel Lab! Código da sala: ' + game.code + ' — ' + inviteLink();
   navigator.clipboard?.writeText(txt).then(() => toast('Convite copiado. Cole no WhatsApp.'), () => toast('Código: ' + game.code));
 });
-function waInvite(){ return 'https://wa.me/?text=' + encodeURIComponent('Bora jogar Pixel Fuga comigo! 🎮\nEntra na minha sala com o código ' + game.code + ':\n' + inviteLink()); }
+function waInvite(){ return 'https://wa.me/?text=' + encodeURIComponent('Bora jogar Pixel Lab comigo! 🎮\nEntra na minha sala com o código ' + game.code + ':\n' + inviteLink()); }
 
 // botão voltar do celular (app Android): devolve true quando o jogo tratou
 window.__fneonBack = () => {
   const vis = SCREENS.find(s => !$('#' + s).hidden);
   if (game.phase === 'play' && !vis){ openPause(); return true; }
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
+  if (vis === 'scrSettings'){ closeSettings(); return true; }
   if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow' || vis === 'scrUltra' || vis === 'scrRank'){ show('scrMenu'); refreshMenu(); return true; }
   if (vis === 'scrMenu'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
