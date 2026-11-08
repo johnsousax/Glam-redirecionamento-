@@ -68,6 +68,8 @@ input,textarea{font-family:var(--body);font-size:24px;color:var(--cream);backgro
 textarea{resize:none;min-height:70px;line-height:1.1}
 input:focus,textarea:focus{outline:none;border-color:var(--gold)}
 input.code{font-family:var(--pixel);font-size:20px;text-transform:uppercase;letter-spacing:.3em;text-align:center;padding:12px 6px}
+#svCode{font-size:26px;letter-spacing:.12em;-webkit-user-select:all;user-select:all}
+#svIn{font-size:16px;letter-spacing:.12em}
 button,a.btn{font-family:var(--pixel);font-weight:400;font-size:12px;line-height:1.5;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;text-align:center;
   color:var(--cream);background:var(--dusk);border:3px solid #000;border-radius:0;padding:13px 12px;cursor:pointer;box-shadow:4px 4px 0 #000;display:block}
 button:active,a.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
@@ -233,7 +235,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <p class="tag sub8">Labirinto de pixel 8-bit</p>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
-    <p class="ver">Pixel Lab v2.6</p>
+    <p class="ver">Pixel Lab v2.7</p>
     <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
@@ -347,12 +349,12 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     </div>
     <div class="card">
       <h3>Salvar progresso</h3>
-      <p class="note">Seu progresso é guardado na nuvem sozinho. Para continuar em outro celular (ou se trocar de aparelho), use o <b>código de recuperação</b> abaixo. Guarde ele: quem tiver o código pega o seu progresso.</p>
-      <div class="codebox small" id="svCode">--------</div>
+      <p class="note">Seu progresso é guardado na nuvem sozinho. Para continuar em outro celular, anote o <b>código de recuperação</b> abaixo e digite no outro aparelho. Não mostre para ninguém: quem tiver o código pega o seu progresso.</p>
+      <div class="codebox" id="svCode">----</div>
       <div class="row"><button class="small grow" id="svCopy">Copiar código</button><a class="btn small grow" id="svWa" href="#" target="_blank" rel="noopener noreferrer">Guardar no WhatsApp</a></div>
       <p class="note" id="svStatus" aria-live="polite"></p>
       <h3>Recuperar em outro aparelho</h3>
-      <div class="row"><input class="grow" id="svIn" maxlength="60" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Cole o código aqui"><button class="main" id="svLoad">Recuperar</button></div>
+      <div class="row"><input class="grow code" id="svIn" maxlength="60" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH"><button class="main" id="svLoad">Recuperar</button></div>
       <p class="note">Entrar com Google: em breve.</p>
     </div>
     <button class="ghost" id="btSettingsBack">Voltar</button>

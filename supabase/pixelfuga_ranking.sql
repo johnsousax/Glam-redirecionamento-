@@ -48,3 +48,7 @@ create table if not exists public.pixelfuga_saves (
 );
 alter table public.pixelfuga_saves enable row level security;
 revoke all on public.pixelfuga_saves from anon, authenticated;
+
+-- v2.7: código de recuperação curto (8 caracteres). Só o hash fica no banco.
+alter table public.pixelfuga_saves add column if not exists code_hash text check (code_hash is null or char_length(code_hash) = 64);
+create unique index if not exists pixelfuga_saves_code_hash_key on public.pixelfuga_saves (code_hash);

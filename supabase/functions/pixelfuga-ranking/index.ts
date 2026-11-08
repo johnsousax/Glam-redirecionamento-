@@ -1,13 +1,16 @@
 // Ranking e cópia do progresso do Pixel Lab (antigo Pixel Fuga).
 // GET  -> lista pública (top 100): apelido, fase atual, fases concluídas, fases do desafio.
-// POST -> { device, action: 'save' | 'me' | 'delete' | 'backup' | 'restore', name?, progress?, data? }
-//   backup/restore: cópia do progresso do aparelho. O código do aparelho funciona como código de recuperação.
+// POST -> { device, action: 'save' | 'me' | 'delete' | 'backup' | 'restore', name?, progress?, data?, code? }
+//   backup:  guarda a cópia do progresso do aparelho, ligada ao código de recuperação curto (ABCD-EFGH).
+//   restore: { device (aparelho novo), code } devolve a cópia e passa a linha do ranking para o aparelho novo.
+//            Sem code, aceita o formato antigo (device = código longo do aparelho antigo).
 // Só esta função toca nas tabelas pixelfuga_* (service role). As tabelas não têm acesso público.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = ["https://pixellabirinto.vercel.app", "https://pixellab8bit.vercel.app", "https://pixellabgame.vercel.app", "https://pixelfuga.vercel.app", "https://fuga-neon.vercel.app"];
 const MAX_BODY = 8000, MAX_SAVE = 6000;
-const RATE_WINDOW_MS = 10 * 60 * 1000, RATE_MAX = 60;
+const RATE_WINDOW_MS = 10 * 60 * 1000, RATE_MAX = 120;
+const CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/; // sem I, L, O, 0 e 1, que se confundem
 const BAD_WORDS = new Set(["porra","caralho","merda","puta","puto","putaria","fdp","viado","buceta","arrombado","arrombada","cuzao","foder","fodase","foda","fodido","vagabunda","vagabundo","corno","piranha","bosta","desgracado","desgracada","otario","otaria","babaca","vadia","cacete","pqp","vsf","vtnc","krl","prr"]);
 const RANK_ORDER: [string, boolean][] = [["current_level", false], ["levels_done", false], ["challenge_levels", false], ["total_time_s", true], ["created_at", true]];
 
@@ -67,7 +70,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   }
   if (req.method !== "POST") return reply(h, 405, { error: "Método não permitido." });
 
-  // limite por conexão: 60 envios a cada 10 minutos
+  // limite por conexão: 120 envios a cada 10 minutos
   const ipHash = await sha256("pxf-ip|" + ip);
   const { data: rl } = await db.from("pixelfuga_rate").select("window_start, hits").eq("ip_hash", ipHash).maybeSingle();
   const now = Date.now();
@@ -84,10 +87,12 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   try { body = JSON.parse(raw); } catch { return reply(h, 400, { error: "Dados inválidos." }); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return reply(h, 400, { error: "Dados inválidos." });
   // "instagram" ainda é aceito (e ignorado) para versões antigas do jogo guardadas no aparelho
-  const allowed = new Set(["device", "action", "name", "instagram", "progress", "data"]);
+  const allowed = new Set(["device", "action", "name", "instagram", "progress", "data", "code"]);
   if (Object.keys(body).some((k) => !allowed.has(k))) return reply(h, 400, { error: "Dados inválidos." });
   if (typeof body.device !== "string" || !/^[A-Za-z0-9_-]{20,100}$/.test(body.device)) return reply(h, 400, { error: "Aparelho inválido." });
   const deviceHash = await sha256("pxf-dev|" + body.device);
+  if (body.code !== undefined && (typeof body.code !== "string" || !CODE_RE.test(body.code))) return reply(h, 400, { error: "Código inválido. Ele tem 8 letras e números, como ABCD-EFGH." });
+  const codeHash = body.code ? await sha256("pxf-rc|" + body.code) : null;
 
   const position = async () => {
     const { data, error } = await ordered(db.from("pixelfuga_players").select("device_hash")).limit(10000);
@@ -107,14 +112,32 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
     if (Object.keys(d).some((k) => !okKeys.has(k))) return reply(h, 400, { error: "Dados inválidos." });
     const text = JSON.stringify(d);
     if (text.length > MAX_SAVE) return reply(h, 413, { error: "Dados grandes demais." });
-    const { error } = await db.from("pixelfuga_saves").upsert({ device_hash: deviceHash, data: d, updated_at: new Date(now).toISOString() });
-    if (error) throw error;
+    const row: Record<string, unknown> = { device_hash: deviceHash, data: d, updated_at: new Date(now).toISOString() };
+    if (codeHash) row.code_hash = codeHash;
+    const { error } = await db.from("pixelfuga_saves").upsert(row);
+    if (error) {
+      if (error.code === "23505") return reply(h, 409, { error: "Código em uso.", retry: true }); // o jogo sorteia outro código
+      throw error;
+    }
     return reply(h, 200, { ok: true });
   }
   if (body.action === "restore") {
-    const { data, error } = await db.from("pixelfuga_saves").select("data, updated_at").eq("device_hash", deviceHash).maybeSingle();
+    const q = db.from("pixelfuga_saves").select("device_hash, data, updated_at");
+    const { data, error } = await (codeHash ? q.eq("code_hash", codeHash) : q.eq("device_hash", deviceHash)).maybeSingle();
     if (error) throw error;
-    if (!data) return reply(h, 404, { error: "Não achei progresso com esse código. Confira e tente de novo." });
+    if (!data) return reply(h, 404, { error: "Não achei progresso com esse código. Confira as letras e tente de novo." });
+    if (codeHash && data.device_hash !== deviceHash) {
+      // o aparelho novo assume a cópia e a linha do ranking do aparelho antigo
+      await db.from("pixelfuga_saves").delete().eq("device_hash", deviceHash);
+      const { error: e1 } = await db.from("pixelfuga_saves").update({ device_hash: deviceHash }).eq("code_hash", codeHash);
+      if (e1) throw e1;
+      const { data: oldRow } = await db.from("pixelfuga_players").select("id").eq("device_hash", data.device_hash).maybeSingle();
+      if (oldRow) {
+        await db.from("pixelfuga_players").delete().eq("device_hash", deviceHash);
+        const { error: e2 } = await db.from("pixelfuga_players").update({ device_hash: deviceHash }).eq("id", oldRow.id);
+        if (e2) throw e2;
+      }
+    }
     return reply(h, 200, { ok: true, data: data.data, updated_at: data.updated_at });
   }
   if (body.action === "delete") {

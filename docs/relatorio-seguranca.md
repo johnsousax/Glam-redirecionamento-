@@ -64,7 +64,7 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 **Ranking (v2.2, revisto na v2.3)**
 - v2.3: o Instagram saiu (coluna apagada do banco). Só o apelido aparece, e todo jogador com apelido entra no ranking. Menos dado pessoal guardado.
 - Tabelas `pixelfuga_players` e `pixelfuga_rate` com RLS ligado e nenhuma política, e `revoke all` para `anon` e `authenticated`: ninguém lê nem grava direto. Só a função `pixelfuga-ranking` (chave de serviço, que fica no servidor) acessa.
-- A função só devolve campos públicos (nunca o código do aparelho), aceita só as origens do jogo, limita o corpo a 2 KB, recusa campos desconhecidos e limita 60 envios a cada 10 minutos por IP (guardado como hash).
+- A função só devolve campos públicos (nunca o código do aparelho), aceita só as origens do jogo, limita o corpo a 2 KB, recusa campos desconhecidos e limita 120 envios a cada 10 minutos por IP (guardado como hash).
 - Apelido passa pelo filtro de palavrões e links no jogo e de novo no servidor, e é sempre mostrado como texto.
 - Plausibilidade: concluídas ≤ fase atual, desafio ≤ concluídas, tempo mínimo de 3 s por fase e no máximo 2 fases + 1 a cada 20 s desde o último envio. Ninguém desce de posição por um envio.
 - Aviso no campo do apelido e na política de privacidade. Para sair, a pessoa pede pelo Instagram do criador (dá para apagar a linha no painel do Supabase).
@@ -72,7 +72,7 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 
 **Cópia do progresso (v2.4)**
 - Tabela `pixelfuga_saves` com as mesmas regras (RLS sem policies, `revoke all`). Só a função grava e lê.
-- O código de recuperação é o código aleatório do aparelho (24 bytes, `crypto.getRandomValues`); no banco fica só o SHA-256. Tentar adivinhar é inviável e ainda cai no limite de 60 tentativas a cada 10 minutos por IP.
+- v2.7: código de recuperação curto, 8 caracteres de um alfabeto de 31 sem letras que se confundem (cerca de 850 bilhões de combinações), sorteado com `crypto.getRandomValues`. No banco fica só o SHA-256. Adivinhar é inviável com o limite de 120 envios a cada 10 minutos por IP. Ao recuperar, a cópia e a linha do ranking passam para o aparelho novo, e o aparelho antigo ganha outro código.
 - A cópia aceita só chaves conhecidas e no máximo 6 KB. Ao recuperar, o jogo confere cada valor antes de juntar com o que já existe no aparelho.
 - "Entrar com Google" ficou de fora: o login do Supabase do projeto "Fluxo zero" é o mesmo do seu CRM, e colocar jogadores lá poderia dar acesso a dados do CRM. Para ter Google, é preciso um Client ID do Google próprio do jogo, validado pela função (sem usar o login do CRM).
 

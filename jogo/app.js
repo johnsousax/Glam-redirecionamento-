@@ -1831,9 +1831,9 @@ function renderSettings(){
   segSet('#segSound', store.get('mute', false) ? 'off' : 'on');
   segSet('#segVib', store.get('novib', false) ? 'off' : 'on');
   segSet('#segCtrl', ctrlMode()); $('#ctrlNote').textContent = CTRL_NOTES[ctrlMode()];
-  const code = deviceId();
-  $('#svCode').textContent = code.match(/.{1,4}/g).join(' ');
-  $('#svWa').href = 'https://wa.me/?text=' + encodeURIComponent('Meu código de recuperação do Pixel Lab (não mostre para ninguém):\n' + code);
+  const code = fmtCode(rcode());
+  $('#svCode').textContent = code;
+  $('#svWa').href = 'https://wa.me/?text=' + encodeURIComponent('Meu código de recuperação do Pixel Lab (não mostre para ninguém): ' + code);
 }
 let settingsFrom = 'scrMenu';
 function openSettings(from){
@@ -1848,9 +1848,19 @@ $('#segCtrl').addEventListener('click', e => { const b = e.target.closest('butto
 $('#btSettings').addEventListener('click', () => openSettings('scrMenu'));
 $('#btPauseSettings').addEventListener('click', () => openSettings('scrPause'));
 $('#btSettingsBack').addEventListener('click', closeSettings);
-$('#svCopy').addEventListener('click', () => navigator.clipboard?.writeText(deviceId()).then(() => toast('Código copiado. Guarde num lugar seguro.'), () => toast('Segure o código para copiar.')));
+$('#svCopy').addEventListener('click', () => navigator.clipboard?.writeText(fmtCode(rcode())).then(() => toast('Código copiado. Guarde num lugar seguro.'), () => toast('Segure o código para copiar.')));
 
-// cópia do progresso na nuvem (o código do aparelho é o código de recuperação)
+// código de recuperação curto: 8 letras e números sem os que se confundem (I, L, O, 0, 1)
+const CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', CODE_RE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/;
+function newCode(){
+  let c = ''; const b = new Uint8Array(32);
+  while (c.length < 8){ crypto.getRandomValues(b); for (const x of b){ if (x < 248 && c.length < 8) c += CODE_ABC[x % 31]; } }
+  return c;
+}
+function rcode(){ let c = store.get('rcode', ''); if (typeof c !== 'string' || !CODE_RE.test(c)){ c = newCode(); store.set('rcode', c); } return c; }
+const fmtCode = c => c.slice(0, 4) + '-' + c.slice(4);
+const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+// cópia do progresso na nuvem, ligada ao código de recuperação
 const SAVE_KEYS = ['soloMax', 'soloLast', 'ultraMax', 'ultraBest', 'camp', 'name', 'prizeSeen'];
 function saveSnapshot(){
   const d = { v: 1 }; for (const k of SAVE_KEYS){ const v = store.get(k, null); if (v != null) d[k] = v; }
@@ -1860,7 +1870,11 @@ let lastBackup = 0, backupBusy = false;
 async function cloudBackup(force){
   if (backupBusy || (!force && Date.now() - lastBackup < 20000)) return null;
   backupBusy = true; lastBackup = Date.now();
-  try{ return await rankCall({ device: deviceId(), action: 'backup', data: saveSnapshot() }); } finally { backupBusy = false; }
+  try{
+    let r = await rankCall({ device: deviceId(), action: 'backup', code: rcode(), data: saveSnapshot() });
+    if (r.status === 409 && r.data.retry){ store.set('rcode', newCode()); r = await rankCall({ device: deviceId(), action: 'backup', code: rcode(), data: saveSnapshot() }); if (!$('#scrSettings').hidden) renderSettings(); }
+    return r;
+  } finally { backupBusy = false; }
 }
 const posInt = (v, max) => Number.isInteger(v) && v >= 1 && v <= max ? v : 0;
 // junta o progresso salvo com o do aparelho, ficando sempre com o melhor de cada fase
@@ -1888,15 +1902,17 @@ function mergeSave(d){
   return true;
 }
 $('#svLoad').addEventListener('click', async () => {
-  const code = $('#svIn').value.replace(/[\s-]+/g, '');
-  if (!/^[A-Za-z0-9_-]{20,100}$/.test(code)) return toast('Código inválido. Confira e tente de novo.');
-  if (code === deviceId()) return toast('Esse já é o código deste aparelho.');
+  const raw = $('#svIn').value.trim(), short = normCode(raw), legacy = raw.replace(/[\s]+/g, '');
+  const isShort = CODE_RE.test(short), isLegacy = !isShort && /^[A-Za-z0-9_-]{20,100}$/.test(legacy);
+  if (!isShort && !isLegacy) return toast('Código inválido. Ele tem 8 letras e números, como ABCD-EFGH.');
+  if (isShort ? short === rcode() : legacy === deviceId()) return toast('Esse já é o código deste aparelho.');
+  if (!confirm('Recuperar o progresso desse código? Ele será juntado com o deste aparelho, e este celular fica com a posição do ranking do outro.')) return;
   const bt = $('#svLoad'); bt.disabled = true;
-  const r = await rankCall({ device: code, action: 'restore' });
+  const r = await rankCall(isShort ? { device: deviceId(), action: 'restore', code: short } : { device: legacy, action: 'restore' });
   bt.disabled = false;
-  if (!r.ok) return toast(r.data.error || 'Não deu certo. Tente de novo.');
-  if (!confirm('Achei o progresso! Juntar com o deste aparelho? Este celular passa a usar esse código e a mesma linha no ranking.')) return;
-  mergeSave(r.data.data); store.set('dev', code); store.set('rankPos', null);
+  if (!r.ok) return toast(r.data.error || 'Não deu certo. Tente de novo.', 4500);
+  mergeSave(r.data.data); store.set('rankPos', null);
+  if (isShort) store.set('rcode', short); else store.set('dev', legacy);
   $('#inName').value = store.get('name', ''); $('#svIn').value = '';
   renderSettings(); cloudBackup(true); rankSync(true).then(() => loadTop(true));
   toast('Progresso recuperado! Fase ' + soloMax() + ' liberada.');
