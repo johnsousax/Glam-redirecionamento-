@@ -180,7 +180,7 @@ const WORLDS = [
 ];
 const worldIdx = idx => Math.floor((idx - 1) / 10) % WORLDS.length;
 
-// desliza a partir de pos na direção d até bater numa parede (setas mudam a direção, portais teletransportam)
+// desliza a partir de pos na direção d até bater numa parede (setas mudam a direção, portais teletransportam e param)
 function slide(L, pos, d, deadly){
   const w = L.w, h = L.h; let x = pos % w, y = (pos / w) | 0; const path = [], steps = []; let guard = 0;
   for(;;){
@@ -193,7 +193,8 @@ function slide(L, pos, d, deadly){
     if (deadly && L.spikes[n]) return { end: n, path, steps, dead: true };
     if (n === L.exit) return { end: n, path, steps, exit: true };
     const tp = L.tele[n];
-    if (tp >= 0){ x = tp % w; y = (tp / w) | 0; path.push(tp); steps.push({ t: tp, d, tp: true }); }
+    // portal: leva para o outro portal e para em cima dele
+    if (tp >= 0){ x = tp % w; y = (tp / w) | 0; path.push(tp); steps.push({ t: tp, d, tp: true }); break; }
     const ar = L.arrow[n]; if (ar) d = ar - 1;
     if (L.glue[n]) break;
   }
@@ -347,10 +348,7 @@ function genLevel(idx, seed){
       const c = [...an.trav.keys()].filter(t => !an.seen.has(t) && !special(t));
       if (c.length < 2) break;
       const A = c[Math.floor(R() * c.length)];
-      // quem entra num portal sai do outro na mesma direção: só liga portais em que dá para seguir em frente
-      const open = (t, d) => { const x = t % w + DIRS[d][0], y = ((t / w) | 0) + DIRS[d][1]; return x >= 0 && y >= 0 && x < w && y < h && L.grid[y * w + x] !== WALL; };
-      const fits = (a, b) => [0, 1, 2, 3].every(d => (!open(a, (d + 2) % 4) || open(b, d)) && (!open(b, (d + 2) % 4) || open(a, d)));
-      const far = c.filter(t => Math.abs(t % w - A % w) + Math.abs(((t / w) | 0) - ((A / w) | 0)) >= 12 && fits(A, t));
+      const far = c.filter(t => Math.abs(t % w - A % w) + Math.abs(((t / w) | 0) - ((A / w) | 0)) >= 12);
       if (!far.length) continue;
       const B = far[Math.floor(R() * far.length)];
       L.tele[A] = B; L.tele[B] = A;
@@ -1677,7 +1675,7 @@ function buildLegend(){
     [mk(g => g.drawImage(SPR.spikes(), 0, 0)), '<b>1. Espinhos</b> (fase 2+). Tocou, volta pro início.'],
     [mk(g => g.drawImage(SPR.arrow(1, 1), 0, 0)), '<b>2. Setas</b> (fase 6+). Mudam sua direção no meio do caminho.'],
     [mk(g => { g.fillStyle = '#6b1a28'; g.fillRect(0, 3, 1, 2); g.fillRect(7, 3, 1, 2); g.fillStyle = P.pink; g.fillRect(1, 3, 6, 2); g.fillStyle = '#fff'; g.fillRect(1, 3, 6, 1); }), '<b>3. Lasers</b> (fase 11+). Ligam e desligam. Passe no apagado.'],
-    [mk(g => g.drawImage(SPR.tele(0, 0), 0, 0)), '<b>4. Portais</b> (fase 13+). Te jogam para o outro portal da mesma cor.'],
+    [mk(g => g.drawImage(SPR.tele(0, 0), 0, 0)), '<b>4. Portais</b> (fase 13+). Te levam para o outro portal da mesma cor, e você para em cima dele.'],
     [mk(g => g.drawImage(SPR.rsUp(), 0, 0)), '<b>5. Espinhos que sobem</b> (fase 21+). Fique de olho no ritmo.'],
     [mk(g => g.drawImage(SPR.crusher(), 0, 0)), '<b>6. Esmagadores</b> (fase 24+). Saem da parede e voltam.'],
     [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>7. Maré de plasma</b> (fases 31 a 50). Sobe atrás de você.'],
