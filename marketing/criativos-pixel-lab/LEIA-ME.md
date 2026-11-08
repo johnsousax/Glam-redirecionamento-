@@ -3,7 +3,7 @@
 10 conceitos, cada um em **Stories/Reels (1080×1920)** e **Feed (1080×1350, 4:5)**. São 20 imagens.
 Nos Stories, texto e botões ficam fora das áreas que o Instagram cobre no topo e na base.
 
-**Destino dos anúncios:** https://pixellab8bit.vercel.app (o jogo abre direto no navegador).
+**Destino dos anúncios:** https://pixellabirinto.vercel.app (o jogo abre direto no navegador).
 
 | # | Conceito | Gancho | O que testa |
 |---|---|---|---|

@@ -1932,7 +1932,7 @@ $('#btPrizeBack').addEventListener('click', () => toMenu());
 $('#pzName').addEventListener('input', updatePrizeLink);
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
 $('#btQuit').addEventListener('click', () => toMenu());
-const PUBLIC_URL = 'https://pixellab8bit.vercel.app/';
+const PUBLIC_URL = 'https://pixellabirinto.vercel.app/';
 function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
 $('#btCopy').addEventListener('click', () => {
   const txt = 'Bora jogar Pixel Lab! Código da sala: ' + game.code + ' — ' + inviteLink();
@@ -1957,7 +1957,7 @@ if (!IN_APP){ $('#appCard').hidden = false; $('#appAndroid').hidden = IS_IOS; $(
 
 // endereço novo (Pixel Lab): quem abre o endereço antigo no navegador vai para o novo levando o progresso.
 // O app Android continua no endereço antigo (o progresso dele fica lá) até sair uma versão nova do app.
-const MAIN_HOST = 'pixellab8bit.vercel.app', OLD_HOSTS = ['pixelfuga.vercel.app', 'fuga-neon.vercel.app'];
+const MAIN_HOST = 'pixellabirinto.vercel.app', OLD_HOSTS = ['pixelfuga.vercel.app', 'fuga-neon.vercel.app', 'pixellab8bit.vercel.app', 'pixellabgame.vercel.app'];
 async function moveToNewHome(){
   if (IN_APP || !OLD_HOSTS.includes(location.hostname)) return;
   const has = soloMax() > 1 || store.get('name', '') || Object.keys(loadCamp().l).length || Object.keys(store.get('ultraBest', {})).length;

@@ -5,7 +5,7 @@
 // Só esta função toca nas tabelas pixelfuga_* (service role). As tabelas não têm acesso público.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ALLOWED_ORIGINS = ["https://pixellab8bit.vercel.app", "https://pixellabgame.vercel.app", "https://pixelfuga.vercel.app", "https://fuga-neon.vercel.app"];
+const ALLOWED_ORIGINS = ["https://pixellabirinto.vercel.app", "https://pixellab8bit.vercel.app", "https://pixellabgame.vercel.app", "https://pixelfuga.vercel.app", "https://fuga-neon.vercel.app"];
 const MAX_BODY = 8000, MAX_SAVE = 6000;
 const RATE_WINDOW_MS = 10 * 60 * 1000, RATE_MAX = 60;
 const BAD_WORDS = new Set(["porra","caralho","merda","puta","puto","putaria","fdp","viado","buceta","arrombado","arrombada","cuzao","foder","fodase","foda","fodido","vagabunda","vagabundo","corno","piranha","bosta","desgracado","desgracada","otario","otaria","babaca","vadia","cacete","pqp","vsf","vtnc","krl","prr"]);
