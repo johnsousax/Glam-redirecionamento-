@@ -1932,7 +1932,7 @@ $('#btPrizeBack').addEventListener('click', () => toMenu());
 $('#pzName').addEventListener('input', updatePrizeLink);
 $('#btResume').addEventListener('click', () => { game.paused = false; show(null); });
 $('#btQuit').addEventListener('click', () => toMenu());
-const PUBLIC_URL = 'https://pixelfuga.vercel.app/';
+const PUBLIC_URL = 'https://pixellab8bit.vercel.app/';
 function inviteLink(){ const base = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : PUBLIC_URL; return base + '?sala=' + game.code; }
 $('#btCopy').addEventListener('click', () => {
   const txt = 'Bora jogar Pixel Lab! Código da sala: ' + game.code + ' — ' + inviteLink();
@@ -1954,6 +1954,28 @@ window.__fneonBack = () => {
 const IN_APP = /FugaNeonApp/.test(navigator.userAgent);
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 if (!IN_APP){ $('#appCard').hidden = false; $('#appAndroid').hidden = IS_IOS; $('#appIos').hidden = !IS_IOS; }
+
+// endereço novo (Pixel Lab): quem abre o endereço antigo no navegador vai para o novo levando o progresso.
+// O app Android continua no endereço antigo (o progresso dele fica lá) até sair uma versão nova do app.
+const MAIN_HOST = 'pixellab8bit.vercel.app', OLD_HOSTS = ['pixelfuga.vercel.app', 'fuga-neon.vercel.app'];
+async function moveToNewHome(){
+  if (IN_APP || !OLD_HOSTS.includes(location.hostname)) return;
+  const has = soloMax() > 1 || store.get('name', '') || Object.keys(loadCamp().l).length || Object.keys(store.get('ultraBest', {})).length;
+  let hash = '';
+  if (has){ const r = await cloudBackup(true); if (!r || !r.ok) return; hash = '#migrar=' + deviceId(); } // sem internet: fica aqui por enquanto
+  location.replace('https://' + MAIN_HOST + '/' + location.search + hash);
+}
+async function finishMove(){
+  const m = /^#migrar=([A-Za-z0-9_-]{20,100})$/.exec(location.hash); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search); // tira o código do endereço na hora
+  if (m[1] === store.get('dev', '')) return;
+  const r = await rankCall({ device: m[1], action: 'restore' });
+  if (!r.ok) return toast('Não consegui trazer seu progresso. Use o código de recuperação em Configurações.', 5000);
+  mergeSave(r.data.data); store.set('dev', m[1]); store.set('rankPos', null);
+  $('#inName').value = store.get('name', ''); refreshMenu();
+  toast('Bem-vindo ao Pixel Lab! Seu progresso veio junto.', 4000);
+}
+moveToNewHome(); finishMove();
 
 buildLegend(); resize(); refreshMenu(); show('scrTitle');
 // abrir pelo link de convite: vai direto para o menu com o código preenchido

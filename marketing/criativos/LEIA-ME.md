@@ -40,6 +40,6 @@ Texto e botões ficam fora das áreas cobertas pelo Instagram no topo e na base 
 
 ## Antes de subir
 
-- **Destino:** https://pixelfuga.vercel.app (joga direto no navegador). Evite mandar o anúncio direto para o download do APK fora da Play Store: plataformas de anúncio costumam restringir isso.
+- **Destino:** https://pixellab8bit.vercel.app (joga direto no navegador). Evite mandar o anúncio direto para o download do APK fora da Play Store: plataformas de anúncio costumam restringir isso.
 - **Prêmio:** o anúncio do conceito 1 cita a condição real e "Regras no app". As regras completas estão no jogo, no cartão "Desafio R$ 50".
 - **Teste:** suba os 5 conceitos no mesmo conjunto, com a mesma verba, e compare custo por clique e tempo de jogo depois de alguns dias. Não decida pelo primeiro dia.

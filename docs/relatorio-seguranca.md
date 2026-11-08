@@ -4,7 +4,7 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 
 ## 1. Tipo de sistema e seções aplicadas
 
-**Jogo + app mobile** (site estático/PWA em pixelfuga.vercel.app e app Android que abre esse site).
+**Jogo + app mobile** (site estático/PWA em pixellab8bit.vercel.app (antes pixelfuga.vercel.app) e app Android que abre o endereço antigo).
 
 | Seção | Aplicada? | Por quê |
 |---|---|---|

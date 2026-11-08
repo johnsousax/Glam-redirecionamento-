@@ -30,12 +30,12 @@ Deslize o dedo e o bonequinho dispara até bater na parede. Ache a porta dourada
 
 **Categoria:** Jogos › Quebra-cabeça (ou Arcade)
 
-**Política de privacidade:** https://pixelfuga.vercel.app/politica-de-privacidade.html
+**Política de privacidade:** https://pixellab8bit.vercel.app/politica-de-privacidade.html
 
 ## Passo a passo
 
 1. **Conta no Play Console** (US$ 25, uma vez). Conta pessoal nova precisa de teste fechado com 12 testadores por 14 dias seguidos antes de liberar a produção; conta de organização (CNPJ + número D-U-N-S) não passa por isso. Decida antes: conta pessoal não vira conta de empresa depois.
-2. **Gerar o pacote (AAB):** em https://www.pwabuilder.com, cole `https://pixelfuga.vercel.app`, escolha **Android** e baixe o pacote. Guarde a chave de assinatura e as senhas que ele gerar — sem elas não dá para publicar atualizações.
+2. **Gerar o pacote (AAB):** em https://www.pwabuilder.com, cole `https://pixellab8bit.vercel.app`, escolha **Android** e baixe o pacote. Guarde a chave de assinatura e as senhas que ele gerar — sem elas não dá para publicar atualizações.
 3. **Criar o app no Play Console**, enviar o AAB na trilha de teste (interno ou fechado) e preencher: ficha (textos e imagens acima), classificação de conteúdo (questionário IARC), segurança dos dados, público-alvo e anúncios (o jogo não tem anúncios).
 4. **Tirar a barra de endereço do app:** o PWABuilder entrega um arquivo `assetlinks.json`. Ele precisa ficar em `jogo/.well-known/assetlinks.json`, com a impressão digital SHA-256 que aparece no Play Console em *Integridade do app › Assinatura de apps*. Sem isso o jogo abre com a barra do navegador no topo.
 5. **Teste fechado → produção.** Com a conta pessoal: 12 testadores inscritos por 14 dias seguidos, depois pedir acesso à produção.
@@ -47,7 +47,7 @@ Deslize o dedo e o bonequinho dispara até bater na parede. Ache a porta dourada
 
 ## Situação no site/app (7/11/2026)
 
-Já está pronto em https://pixelfuga.vercel.app:
+Já está pronto em https://pixellab8bit.vercel.app:
 
 - **Política de privacidade** publicada em `/politica-de-privacidade.html` (também tem link no menu do jogo).
 - **Manifesto do app** (`/manifest.webmanifest`) com nome, cores, tela cheia, retrato, ícones 192/512, ícone "maskable" para o Android e 2 capturas de tela. É o que o PWABuilder lê no passo 2.
