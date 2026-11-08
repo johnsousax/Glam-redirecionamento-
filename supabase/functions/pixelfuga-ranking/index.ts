@@ -1,6 +1,6 @@
 // Ranking do Pixel Fuga.
-// GET  -> lista pública (top 100): nome, Instagram, fase atual, fases concluídas, fases do desafio.
-// POST -> { device, action: 'save' | 'me' | 'delete', name?, instagram?, progress? }
+// GET  -> lista pública (top 100): apelido, fase atual, fases concluídas, fases do desafio.
+// POST -> { device, action: 'save' | 'me' | 'delete', name?, progress? }
 // Só esta função toca nas tabelas pixelfuga_* (service role). As tabelas não têm acesso público.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -41,14 +41,8 @@ function cleanName(raw: unknown) {
   t = t.replace(/\s+/g, " ").trim().slice(0, 20);
   return t.length >= 2 ? t : null;
 }
-// usuário do Instagram: aceita "@fulano" ou o link do perfil
-function cleanInstagram(raw: unknown) {
-  let t = String(raw ?? "").trim().toLowerCase();
-  t = t.replace(/^https?:\/\/(www\.)?instagram\.com\//, "").replace(/^@/, "").replace(/[/?#].*$/, "");
-  return /^[a-z0-9._]{1,30}$/.test(t) && !/^\.|\.$|\.\./.test(t) ? t : null;
-}
 // só os campos públicos saem da função (nunca o código do aparelho)
-const pub = (r: any, pos: number | null) => ({ pos, name: r.name, instagram: r.instagram, current_level: r.current_level, levels_done: r.levels_done,
+const pub = (r: any, pos: number | null) => ({ pos, name: r.name, current_level: r.current_level, levels_done: r.levels_done,
   challenge_levels: r.challenge_levels, ultra_done: r.ultra_done, won: r.challenge_levels >= 100 });
 const int = (v: unknown, min: number, max: number) => {
   const n = Number(v);
@@ -65,7 +59,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
 
   if (req.method === "GET") {
     const { data, error } = await ordered(db.from("pixelfuga_players")
-      .select("name, instagram, current_level, levels_done, challenge_levels, ultra_done")).limit(100);
+      .select("name, current_level, levels_done, challenge_levels, ultra_done")).limit(100);
     if (error) throw error;
     const { count } = await db.from("pixelfuga_players").select("id", { count: "exact", head: true });
     return reply(h, 200, { total: count ?? data.length, rows: data.map((r: any, i: number) => pub(r, i + 1)) });
@@ -88,6 +82,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   let body: any;
   try { body = JSON.parse(raw); } catch { return reply(h, 400, { error: "Dados inválidos." }); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return reply(h, 400, { error: "Dados inválidos." });
+  // "instagram" ainda é aceito (e ignorado) para versões antigas do jogo guardadas no aparelho
   const allowed = new Set(["device", "action", "name", "instagram", "progress"]);
   if (Object.keys(body).some((k) => !allowed.has(k))) return reply(h, 400, { error: "Dados inválidos." });
   if (typeof body.device !== "string" || !/^[A-Za-z0-9_-]{20,100}$/.test(body.device)) return reply(h, 400, { error: "Aparelho inválido." });
@@ -100,7 +95,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
     return i >= 0 ? i + 1 : null;
   };
   const { data: prev, error: prevErr } = await db.from("pixelfuga_players")
-    .select("name, instagram, current_level, levels_done, challenge_levels, ultra_done, total_time_s, updated_at")
+    .select("name, current_level, levels_done, challenge_levels, ultra_done, total_time_s, updated_at")
     .eq("device_hash", deviceHash).maybeSingle();
   if (prevErr) throw prevErr;
 
@@ -114,9 +109,8 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   }
   if (body.action !== "save") return reply(h, 400, { error: "Ação inválida." });
 
-  const name = cleanName(body.name), instagram = cleanInstagram(body.instagram);
-  if (!name) return reply(h, 400, { error: "Digite um nome com pelo menos 2 letras." });
-  if (!instagram) return reply(h, 400, { error: "Instagram inválido. Use só o usuário, por exemplo @seunome." });
+  const name = cleanName(body.name);
+  if (!name) return reply(h, 400, { error: "Digite um apelido com pelo menos 2 letras." });
   const p = body.progress && typeof body.progress === "object" ? body.progress : {};
   let cur = int(p.current_level, 1, 1000), done = int(p.levels_done, 0, 1000), chal = int(p.challenge_levels, 0, 100),
     ultra = int(p.ultra_done, 0, 10), secs = int(p.total_time_s, 0, 100000000);
@@ -132,14 +126,11 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
     ultra = Math.max(prev.ultra_done, Math.min(ultra, prev.ultra_done + jump));
     secs = Math.max(prev.total_time_s, secs);
   }
-  const row = { name, instagram, current_level: cur, levels_done: done, challenge_levels: chal, ultra_done: ultra, total_time_s: secs };
+  const row = { name, current_level: cur, levels_done: done, challenge_levels: chal, ultra_done: ultra, total_time_s: secs };
   const res = prev
     ? await db.from("pixelfuga_players").update(row).eq("device_hash", deviceHash)
     : await db.from("pixelfuga_players").insert({ device_hash: deviceHash, ...row });
-  if (res.error) {
-    if (res.error.code === "23505") return reply(h, 409, { error: "Esse Instagram já está no ranking em outro aparelho." });
-    throw res.error;
-  }
+  if (res.error) throw res.error;
   return reply(h, 200, { ok: true, ...pub(row, await position()) });
 }
 

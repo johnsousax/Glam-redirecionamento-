@@ -1,4 +1,4 @@
-# Relatório de segurança: Pixel Fuga (v2.2)
+# Relatório de segurança: Pixel Fuga (v2.3)
 
 Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: Segurança Máxima).
 
@@ -33,7 +33,7 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 | Progresso e resultados por fase | Interno | Só no aparelho (armazenamento local) |
 | Endereço IP | Pessoal (técnico) | Visto pelos jogadores da sala e pelo serviço de conexão |
 | Nome e chave Pix para o prêmio | Pessoal | Fora do app, na conversa de WhatsApp com o criador |
-| Nome, Instagram e fases no ranking | Público (com consentimento) | Banco do ranking, até a pessoa tocar em Sair |
+| Apelido e fases no ranking | Público (avisado na tela e na política) | Banco do ranking |
 | Código do aparelho e IP | Pessoal (técnico) | Só como hash SHA-256; o IP serve só para o limite de envios |
 | Crianças | Sensível | Classificação livre; dado pessoal só no ranking, que é opcional |
 
@@ -61,12 +61,13 @@ Auditoria feita em 7/11/2026 contra o padrão do `SECURITY.md` (Prompt Coringa: 
 **Apps mobile**
 - Nenhum segredo no APK. Permissões mínimas (internet, estado da rede e vibração). Só HTTPS. O app só navega no site do jogo (o resto abre fora dele). Ponte JavaScript exposta só para "fechar o app".
 
-**Ranking (v2.2)**
+**Ranking (v2.2, revisto na v2.3)**
+- v2.3: o Instagram saiu (coluna apagada do banco). Só o apelido aparece, e todo jogador com apelido entra no ranking. Menos dado pessoal guardado.
 - Tabelas `pixelfuga_players` e `pixelfuga_rate` com RLS ligado e nenhuma política, e `revoke all` para `anon` e `authenticated`: ninguém lê nem grava direto. Só a função `pixelfuga-ranking` (chave de serviço, que fica no servidor) acessa.
 - A função só devolve campos públicos (nunca o código do aparelho), aceita só as origens do jogo, limita o corpo a 2 KB, recusa campos desconhecidos e limita 60 envios a cada 10 minutos por IP (guardado como hash).
-- Nome passa pelo filtro de palavrões e links. Instagram aceita só `a-z 0-9 . _` (até 30), e o link é montado pelo jogo, nunca vem pronto do servidor.
+- Apelido passa pelo filtro de palavrões e links no jogo e de novo no servidor, e é sempre mostrado como texto.
 - Plausibilidade: concluídas ≤ fase atual, desafio ≤ concluídas, tempo mínimo de 3 s por fase e no máximo 2 fases + 1 a cada 20 s desde o último envio. Ninguém desce de posição por um envio.
-- Consentimento explícito na tela e botão **Sair** que apaga a linha. Política de privacidade atualizada.
+- Aviso no campo do apelido e na política de privacidade. Para sair, a pessoa pede pelo Instagram do criador (dá para apagar a linha no painel do Supabase).
 - CSP `connect-src` liberando só o endereço do projeto.
 
 **Processo**

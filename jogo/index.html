@@ -152,23 +152,69 @@ details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .big.ultra small{color:#5a2a14}
 .levels button.perfect{background:var(--lime);color:var(--ink)}
 /* ranking */
-.big.rankb{background:var(--lav);color:#fff}
 .rlist{display:flex;flex-direction:column;gap:6px}
-.rrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 10px;font-variant-numeric:tabular-nums}
+.rrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:2px 10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 10px;font-variant-numeric:tabular-nums;
+  animation:rowin .3s steps(3) both;animation-delay:var(--d,0s)}
 .rrow.me{border-color:var(--gold)}
 .rrow .pos{font-family:var(--pixel);font-size:11px;color:var(--muted);grid-row:1/3}
-.rrow.top .pos{color:var(--gold)}
-.rrow .who{min-width:0;display:flex;flex-direction:column}
-.rrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px;line-height:1.05}
-.rrow .ig{color:var(--pink);font-size:19px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none;padding:2px 0}
-.rrow .ig:hover,.rrow .ig:focus-visible{text-decoration:underline;outline:none}
+.rrow.t1 .pos{color:var(--gold)}.rrow.t2 .pos{color:#c9d1e8}.rrow.t3 .pos{color:#e08a4a}
+.rrow .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px;line-height:1.05}
 .rrow .lv{text-align:right;font-size:22px;line-height:1.05;white-space:nowrap;color:var(--gold)}
-.rrow .sub{grid-column:2/4;color:var(--muted);font-size:17px;line-height:1.05;margin-top:-4px}
+.rrow .sub{grid-column:2/4;color:var(--muted);font-size:17px;line-height:1.05}
 .rrow .pill{margin-left:6px;vertical-align:2px}
-label.ck{display:flex;gap:10px;align-items:flex-start;font-size:19px;line-height:1.15;color:var(--muted);cursor:pointer}
-label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:var(--gold)}
+@keyframes rowin{from{opacity:0;transform:translateX(-12px)}}
 .err{color:var(--pink)}
-@media (prefers-reduced-motion:reduce){.press{animation:none}button:active,a.btn:active{transform:none}}
+/* pódio do menu */
+.podium{border-color:var(--lav);background:linear-gradient(180deg,#241d4d,var(--night));overflow:hidden;position:relative}
+.live{display:inline-block;width:8px;height:8px;background:var(--red);box-shadow:0 0 0 2px #000;margin-right:8px;vertical-align:1px;animation:blink2 1s steps(1) infinite}
+@keyframes blink2{50%{opacity:.2}}
+.podcols{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:8px;min-height:190px;padding-top:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center}
+.pod .pav{width:36px;height:36px;image-rendering:pixelated;display:block}
+.pod.p1 .pav{width:44px;height:44px}
+.pod .crown{width:28px;height:18px;image-rendering:pixelated;display:block;margin-bottom:-4px}
+.pod .pnm{font-size:21px;line-height:1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod.p1 .pnm{color:var(--gold);font-size:23px}
+.pod .plv{font-size:17px;color:var(--muted);line-height:1}
+.pod .pbar{width:100%;border:3px solid #000;box-shadow:3px 3px 0 #000;display:flex;justify-content:center;align-items:flex-start;padding-top:6px;transform-origin:bottom}
+.pod .pbar b{font-family:var(--pixel);font-weight:400;font-size:14px;color:var(--ink)}
+.pod.p1 .pbar{height:74px;background:repeating-linear-gradient(90deg,var(--gold) 0 10px,#ffe27a 10px 14px)}
+.pod.p2 .pbar{height:52px;background:repeating-linear-gradient(90deg,#c9d1e8 0 10px,#e6ebf7 10px 14px)}
+.pod.p3 .pbar{height:38px;background:repeating-linear-gradient(90deg,#e08a4a 0 10px,#f2ac76 10px 14px)}
+.pod.empty .pnm,.pod.empty .plv{color:var(--dgray,#55507a)}
+.pod.empty .pav{opacity:.45}
+.podcols.go .pbar{animation:rise .5s steps(5) both;animation-delay:var(--d)}
+.podcols.go .pav,.podcols.go .crown{animation:drop .45s steps(4) both;animation-delay:calc(var(--d) + .45s)}
+.podcols.go .pnm,.podcols.go .plv{animation:fadein .3s steps(3) both;animation-delay:calc(var(--d) + .7s)}
+.pod:not(.empty) .pav{animation-name:drop,hop!important;animation-duration:.45s,1.2s!important;animation-iteration-count:1,infinite!important;animation-timing-function:steps(4),steps(2)!important}
+.pod.p1 .crown{animation:drop .45s steps(4) both,tilt 1.6s steps(2) 1s infinite;animation-delay:calc(var(--d) + .45s),1.2s}
+@keyframes rise{from{transform:scaleY(0)}}
+@keyframes drop{from{opacity:0;transform:translateY(-30px)}}
+@keyframes fadein{from{opacity:0}}
+@keyframes hop{50%{transform:translateY(-5px)}}
+@keyframes tilt{50%{transform:rotate(-12deg) translateY(-2px)}}
+.p1 .pav{position:relative}
+.podium::after{content:"";position:absolute;top:0;left:-40%;width:30%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.07),transparent);animation:sweep 4.5s steps(18) infinite}
+@keyframes sweep{to{left:120%}}
+/* menu mais vivo */
+#scrMenu{animation:gridmove 8s linear infinite}
+@keyframes gridmove{to{background-position:0 32px,32px 0}}
+#scrMenu .logo{animation:float 2.4s steps(4) infinite}
+@keyframes float{50%{transform:translateY(-4px)}}
+#scrMenu .wrap.enter>*{animation:pop .4s steps(4) both}
+#scrMenu .wrap.enter>*:nth-child(2){animation-delay:.05s}#scrMenu .wrap.enter>*:nth-child(3){animation-delay:.1s}
+#scrMenu .wrap.enter>*:nth-child(4){animation-delay:.15s}#scrMenu .wrap.enter>*:nth-child(5){animation-delay:.2s}
+#scrMenu .wrap.enter>*:nth-child(6){animation-delay:.25s}#scrMenu .wrap.enter>*:nth-child(7){animation-delay:.3s}
+#scrMenu .wrap.enter>*:nth-child(n+8){animation-delay:.35s}
+@keyframes pop{from{opacity:0;transform:translateY(14px)}}
+.bar i{background-size:16px 100%;animation:stripes .8s steps(4) infinite}
+@keyframes stripes{to{background-position:16px 0}}
+.big.main{position:relative;overflow:hidden}
+.big.main::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:20%;background:rgba(255,255,255,.35);transform:skewX(-20deg);animation:sweep 3.2s steps(16) infinite;pointer-events:none}
+input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.press,#scrMenu,#scrMenu .logo,#scrMenu .wrap.enter>*,.bar i,.big.main::after,.podium::after,.live,.rrow,.pod *,input.shake{animation:none!important}button:active,a.btn:active{transform:none}}
 </style>
 </head>
 <body>
@@ -181,7 +227,7 @@ label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:
     <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Fuga"></canvas>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
-    <p class="ver">v2.2 · 100 fases + Ranking</p>
+    <p class="ver">v2.3 · 100 fases + Ranking</p>
     <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
@@ -207,7 +253,14 @@ label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:
         </ul>
       </div>
     </div>
-    <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="nickname" placeholder="Como te chamam?"></label>
+
+    <div class="card podium" id="podCard">
+      <div class="row"><h3 class="grow"><span class="live" aria-hidden="true"></span>Ranking ao vivo</h3><span class="note" id="podTotal"></span></div>
+      <div class="podcols" id="podCols" aria-label="Os 3 primeiros do ranking"></div>
+      <p class="note center" id="podMe" aria-live="polite"></p>
+      <button class="main" id="btRankAll">Ver ranking completo</button>
+    </div>
+    <label class="f">Seu apelido<input id="inName" maxlength="14" autocomplete="nickname" placeholder="Como quer aparecer no ranking?"></label>
     <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
     <button class="big ultra" id="btUltra">Ultra Labirinto<small>Labirinto gigante, inteiro na tela</small></button>
     <button class="big hot" id="btCreate">Criar sala online<small>Cada um no seu celular, até 6 pessoas</small></button>
@@ -223,7 +276,6 @@ label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:
       </div>
       <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
-    <button class="big rankb" id="btRank">Ranking<small id="rankSub">Veja em que fase cada um está</small></button>
     <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 15 perigos</small></button>
     <button class="ghost" id="btToTitle">Tela inicial</button>
   </div>
@@ -257,22 +309,11 @@ label.ck input{width:24px;height:24px;flex:none;margin:0;padding:0;accent-color:
 <section class="screen" id="scrRank" hidden>
   <div class="wrap">
     <h2>Ranking</h2>
-    <p class="note">Todos os jogadores do modo sozinho, do mais adiantado para o menos. Toque no @ para abrir o Instagram da pessoa.</p>
+    <p class="note">Todos os jogadores, do mais adiantado para o menos, pela fase em que estão no modo sozinho.</p>
     <div class="card" id="rkMe">
       <h3>Você no ranking</h3>
-      <div id="rkStatus" style="display:flex;flex-direction:column;gap:12px" hidden>
-        <p class="note" id="rkStatusText"></p>
-        <div class="row"><button class="main grow" id="rkEdit">Mudar dados</button><button class="ghost grow" id="rkLeave">Sair</button></div>
-      </div>
-      <form id="rkForm" style="display:flex;flex-direction:column;gap:12px" novalidate>
-        <p class="note">Coloque seu nome e seu Instagram para aparecer no ranking. Sua fase é atualizada sozinha enquanto você joga.</p>
-        <label class="f">Nome<input id="rkName" maxlength="20" autocomplete="nickname" placeholder="Seu nome" required></label>
-        <label class="f">Instagram<input id="rkIg" maxlength="60" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="@seuperfil" inputmode="email" required></label>
-        <label class="ck"><input type="checkbox" id="rkOk"><span>Concordo em mostrar meu nome, meu Instagram e minhas fases para todos no ranking. Posso sair quando quiser.</span></label>
-        <p class="note err" id="rkErr" role="alert" hidden></p>
-        <button class="main" id="rkSave" type="submit">Entrar no ranking</button>
-        <button class="ghost" id="rkCancel" type="button" hidden>Cancelar</button>
-      </form>
+      <p class="note" id="rkStatusText"></p>
+      <p class="note">Seu apelido é o do menu. Para trocar, volte ao menu e digite outro.</p>
     </div>
     <div class="card">
       <div class="row"><h3 class="grow" id="rkTotal">Jogadores</h3><button class="small" id="rkReload">Atualizar</button></div>

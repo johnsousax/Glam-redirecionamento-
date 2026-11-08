@@ -34,7 +34,7 @@ const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,''
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
 const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank'];
-function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); }
+function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); if (id === 'scrMenu'){ const w = $('#scrMenu .wrap'); w.classList.remove('enter'); void w.offsetWidth; w.classList.add('enter'); } }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
 function mix(a, b, t){ const A = hexRgb(a), B = hexRgb(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
@@ -1616,7 +1616,7 @@ function openPause(){
 /* ============================== telas ============================== */
 const MAX_LEVEL = 100;
 function refreshMenu(){
-  refreshPrize(); updateRankSub(); rankSync(false);
+  refreshPrize(); updateRankMe(); rankSync(false).then(r => { if (r && r.ok) loadTop(true); }); loadTop(false);
   const n = Math.min(soloMax(), store.get('soloLast', 1));
   $('#soloSub').textContent = 'Fase ' + n + ' · Mundo ' + (worldIdx(n) + 1) + ': ' + WORLDS[worldIdx(n)].name;
 }
@@ -1674,9 +1674,8 @@ function buildLegend(){
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const m = /^<b>(.*?)<\/b>\s*(.*)$/.exec(html); return [h('img', { src, alt: '' }), h('span', null, h('b', null, m ? m[1] : ''), m ? ' ' + m[2] : html)]; }));
 }
 /* ============================== ranking ============================== */
-// Lista pública com nome, Instagram e fase de cada jogador. Só entra quem preenche e aceita.
+// Todo jogador com apelido aparece no ranking. Só o apelido e as fases são públicos.
 const RANK_URL = 'https://vpldivsicywvnvyczkhz.supabase.co/functions/v1/pixelfuga-ranking';
-const IG_RE = /^[a-z0-9._]{1,30}$/;
 function deviceId(){
   let d = store.get('dev', '');
   if (typeof d !== 'string' || !/^[A-Za-z0-9_-]{20,100}$/.test(d)){
@@ -1686,10 +1685,8 @@ function deviceId(){
   }
   return d;
 }
-function igHandle(s){
-  const t = String(s || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/^@/, '').replace(/[/?#].*$/, '');
-  return IG_RE.test(t) && !/^\.|\.$|\.\./.test(t) ? t : null;
-}
+// apelido válido para o ranking (o mesmo que aparece nas salas)
+function rankName(){ const n = publicText(store.get('name', ''), 14); return n.length >= 2 ? n : null; }
 function rankProgress(){
   const c = loadCamp(); let done = 0, t = 0;
   for (const k in c.l){ done++; t += +c.l[k][0] || 0; }
@@ -1705,32 +1702,79 @@ async function rankCall(body){
   }catch(e){ return { ok: false, status: 0, data: { error: 'Sem conexão. Confira a internet e tente de novo.' } }; }
   finally{ clearTimeout(to); }
 }
-const rankReg = () => { const r = store.get('rankReg', null); return r && typeof r.name === 'string' && igHandle(r.instagram) ? r : null; };
-let rankBusy = false, rankLast = 0;
-// manda a fase atual sozinho (depois de cada fase e ao abrir o menu, no máximo a cada 20 s)
+let rankBusy = false, rankLast = 0, rankLastName = '';
+// manda apelido e fase (ao trocar o apelido, depois de cada fase e ao abrir o menu, no máximo a cada 20 s)
 async function rankSync(force){
-  const reg = rankReg(); if (!reg || rankBusy || (!force && Date.now() - rankLast < 20000)) return null;
+  const name = rankName(); if (!name || rankBusy || (!force && name === rankLastName && Date.now() - rankLast < 20000)) return null;
   rankBusy = true; rankLast = Date.now();
   try{
-    const r = await rankCall({ device: deviceId(), action: 'save', name: reg.name, instagram: reg.instagram, progress: rankProgress() });
-    if (r.ok){ store.set('rankPos', r.data.pos || null); updateRankSub(); }
+    const r = await rankCall({ device: deviceId(), action: 'save', name, progress: rankProgress() });
+    if (r.ok){
+      rankLastName = name;
+      const old = store.get('rankPos', null), pos = r.data.pos || null;
+      store.set('rankPos', pos);
+      if (old && pos && pos < old && pos <= 3) toast('Você subiu para o ' + pos + 'º lugar do ranking!');
+      updateRankMe();
+    }
     return r;
   } finally { rankBusy = false; }
 }
-function updateRankSub(){
-  const reg = rankReg(), pos = store.get('rankPos', null);
-  $('#rankSub').textContent = reg && pos ? 'Você está em ' + pos + 'º lugar' : reg ? 'Você está no ranking' : 'Veja em que fase cada um está';
+function updateRankMe(){
+  const name = rankName(), pos = store.get('rankPos', null);
+  $('#podMe').textContent = !name ? 'Digite seu apelido acima para entrar no ranking.' : pos ? name + ', você está em ' + pos + 'º lugar.' : name + ', jogue uma fase para subir no ranking.';
 }
+function requireName(){
+  if (rankName()) return true;
+  const i = $('#inName'); i.classList.remove('shake'); void i.offsetWidth; i.classList.add('shake'); i.focus();
+  toast('Digite seu apelido (2 letras ou mais) para jogar e aparecer no ranking.');
+  return false;
+}
+// pódio do menu: 2º, 1º e 3º lugar com o bonequinho de cada um
+const POD_COLORS = [P.gold, '#c9d1e8', '#e08a4a'];
+const sprURL = (c, face) => playerSpr(c, face, false).toDataURL();
+let crownURL = '';
+function crown(){
+  if (crownURL) return crownURL;
+  const c = document.createElement('canvas'); c.width = 8; c.height = 5; const g = c.getContext('2d');
+  g.fillStyle = P.gold; ['x...x...x', 'xx.xxx.xx', 'xxxxxxxxx'].forEach((r, y) => [...r].forEach((ch, x) => { if (ch === 'x' && x < 8) g.fillRect(x, y + 1, 1, 1); }));
+  g.fillRect(0, 4, 8, 1); g.fillStyle = P.red; g.fillRect(3, 3, 2, 1);
+  return crownURL = c.toDataURL();
+}
+let topRows = null, topLast = 0;
+function renderPodium(){
+  const box = $('#podCols'), rows = topRows || [];
+  const cols = [1, 0, 2].map(i => {
+    const r = rows[i], place = i + 1;
+    return h('div', { class: 'pod p' + place + (r ? '' : ' empty'), style: '--d:' + [0.15, 0, 0.3][i] + 's' },
+      place === 1 && r ? h('img', { class: 'crown', src: crown(), alt: '' }) : null,
+      h('img', { class: 'pav', src: sprURL(r ? POD_COLORS[i] : P.dgray, r ? [1, 0, 3][i] : 2), alt: '' }),
+      h('span', { class: 'pnm' }, r ? String(r.name) : 'Vago'),
+      h('span', { class: 'plv' }, r ? 'Fase ' + r.current_level : '—'),
+      h('div', { class: 'pbar' }, h('b', null, String(place))));
+  });
+  box.replaceChildren(...cols);
+  box.classList.remove('go'); void box.offsetWidth; box.classList.add('go');
+  $('#podTotal').textContent = topRows ? (rows.length ? (topRows.total || rows.length) + (topRows.total === 1 ? ' jogador' : ' jogadores') : 'Seja o primeiro!') : '';
+}
+async function loadTop(force){
+  if (!force && topRows && Date.now() - topLast < 15000) return;
+  topLast = Date.now();
+  const r = await rankCall(null);
+  if (!r.ok || !Array.isArray(r.data.rows)){ if (!topRows) $('#podTotal').textContent = 'Sem conexão'; return; }
+  const sig = JSON.stringify(r.data.rows.slice(0, 3)), changed = !topRows || sig !== JSON.stringify(topRows.slice(0, 3));
+  topRows = r.data.rows.slice(0, 3); topRows.total = r.data.total; allRows = r.data;
+  if (changed) renderPodium(); else $('#podTotal').textContent = (r.data.total || 0) + (r.data.total === 1 ? ' jogador' : ' jogadores');
+}
+setInterval(() => { if (!$('#scrMenu').hidden && !document.hidden) loadTop(true); }, 30000);
+let allRows = null;
 function rankRow(r, mine){
-  const ig = igHandle(r.instagram), pos = Number.isInteger(r.pos) ? r.pos : null;
+  const pos = Number.isInteger(r.pos) ? r.pos : null;
   const sub = [r.levels_done + (r.levels_done === 1 ? ' concluída' : ' concluídas')];
   if (r.challenge_levels) sub.push(r.challenge_levels + ' no desafio');
   if (r.ultra_done) sub.push(r.ultra_done + ' ultra');
-  return h('div', { class: 'rrow' + (pos && pos <= 3 ? ' top' : '') + (mine ? ' me' : '') },
+  return h('div', { class: 'rrow' + (pos && pos <= 3 ? ' top t' + pos : '') + (mine ? ' me' : ''), style: '--d:' + Math.min(20, (pos || 1) - 1) * 0.03 + 's' },
     h('span', { class: 'pos' }, pos ? pos + 'º' : '-'),
-    h('div', { class: 'who' },
-      h('span', { class: 'nm' }, String(r.name || ''), r.won ? h('span', { class: 'pill yes' }, 'R$ 50') : null),
-      ig ? h('a', { class: 'ig', href: 'https://www.instagram.com/' + ig + '/', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Instagram de ' + r.name + ': @' + ig }, '@' + ig) : null),
+    h('span', { class: 'nm' }, String(r.name || ''), r.won ? h('span', { class: 'pill yes' }, 'R$ 50') : null),
     h('span', { class: 'lv' }, 'Fase ' + r.current_level),
     h('span', { class: 'sub' }, sub.join(' · ')));
 }
@@ -1742,71 +1786,40 @@ async function loadRanking(){
     list.replaceChildren(h('p', { class: 'note err' }, r.data.error || 'Não consegui carregar o ranking. Tente de novo.'));
     return;
   }
-  const mine = rankReg();
+  const myPos = store.get('rankPos', null);
   $('#rkTotal').textContent = r.data.total === 1 ? '1 jogador' : (r.data.total || 0) + ' jogadores';
-  list.replaceChildren(...(r.data.rows.length ? r.data.rows.map(x => rankRow(x, mine && x.instagram === mine.instagram))
+  list.replaceChildren(...(r.data.rows.length ? r.data.rows.map(x => rankRow(x, myPos && x.pos === myPos && x.name === rankName()))
     : [h('p', { class: 'note' }, 'Ninguém entrou ainda. Seja o primeiro!')]));
 }
-function rankForm(open){
-  const reg = rankReg();
-  $('#rkForm').hidden = !open; $('#rkStatus').hidden = open || !reg; $('#rkErr').hidden = true;
-  $('#rkCancel').hidden = !reg;
-  if (open){
-    $('#rkName').value = reg ? reg.name : clean(store.get('name', ''), 20);
-    $('#rkIg').value = reg ? '@' + reg.instagram : '';
-    $('#rkOk').checked = !!reg;
-    $('#rkSave').textContent = reg ? 'Salvar' : 'Entrar no ranking';
-  } else if (reg){
-    const pos = store.get('rankPos', null), p = rankProgress();
-    $('#rkStatusText').textContent = reg.name + ' (@' + reg.instagram + ')' + (pos ? ', ' + pos + 'º lugar' : '') + '. Fase ' + p.current_level + ', ' + p.levels_done + ' concluídas.';
-  }
+function rankMeText(){
+  const name = rankName(), pos = store.get('rankPos', null), p = rankProgress();
+  $('#rkStatusText').textContent = !name ? 'Você ainda não tem apelido. Volte ao menu e digite um para aparecer aqui.'
+    : name + (pos ? ', ' + pos + 'º lugar' : '') + '. Fase ' + p.current_level + ', ' + p.levels_done + (p.levels_done === 1 ? ' concluída.' : ' concluídas.');
 }
-function rankError(msg){ const e = $('#rkErr'); e.textContent = msg; e.hidden = false; }
 async function openRanking(){
   show('scrRank'); $('#scrRank').scrollTop = 0;
-  rankForm(!rankReg());
-  loadRanking();
-  if (rankReg()){
-    const r = await rankSync(true);
-    if (r && r.ok){ rankForm(false); loadRanking(); }
-    else if (r && r.status === 409){ store.set('rankReg', null); rankForm(true); rankError(r.data.error); }
-  }
+  rankMeText(); loadRanking();
+  const r = await rankSync(true);
+  if (r && r.ok){ rankMeText(); loadRanking(); }
 }
-$('#rkForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const name = publicText($('#rkName').value, 20), ig = igHandle($('#rkIg').value);
-  if (name.length < 2) return rankError('Digite um nome com pelo menos 2 letras.');
-  if (!ig) return rankError('Instagram inválido. Use só o usuário, por exemplo @seunome.');
-  if (!$('#rkOk').checked) return rankError('Marque que concorda em aparecer no ranking.');
-  const bt = $('#rkSave'); bt.disabled = true; bt.textContent = 'Enviando…';
-  const r = await rankCall({ device: deviceId(), action: 'save', name, instagram: ig, progress: rankProgress() });
-  bt.disabled = false;
-  if (!r.ok){ rankForm(true); $('#rkName').value = name; $('#rkIg').value = '@' + ig; $('#rkOk').checked = true; return rankError(r.data.error || 'Não deu certo. Tente de novo.'); }
-  store.set('rankReg', { name: r.data.name || name, instagram: r.data.instagram || ig }); store.set('rankPos', r.data.pos || null);
-  rankLast = Date.now(); rankForm(false); updateRankSub(); loadRanking(); toast('Pronto! Você está no ranking.');
-});
-$('#rkEdit').addEventListener('click', () => rankForm(true));
-$('#rkCancel').addEventListener('click', () => rankForm(false));
-$('#rkLeave').addEventListener('click', async () => {
-  if (!confirm('Sair do ranking? Seu nome e seu Instagram serão apagados da lista.')) return;
-  const r = await rankCall({ device: deviceId(), action: 'delete' });
-  if (!r.ok) return toast(r.data.error || 'Não deu certo. Tente de novo.');
-  store.set('rankReg', null); store.set('rankPos', null); rankForm(true); updateRankSub(); loadRanking(); toast('Você saiu do ranking.');
-});
 $('#rkReload').addEventListener('click', loadRanking);
-$('#btRank').addEventListener('click', openRanking);
+$('#btRankAll').addEventListener('click', openRanking);
 $('#inName').value = store.get('name', '');
-$('#inName').addEventListener('change', () => store.set('name', clean($('#inName').value, 14)));
+$('#inName').addEventListener('animationend', e => e.target.classList.remove('shake'));
+$('#inName').addEventListener('change', async () => {
+  store.set('name', clean($('#inName').value, 14)); updateRankMe();
+  const r = await rankSync(true); if (r && r.ok){ loadTop(true); toast('Apelido salvo no ranking!'); } else if (r) toast(r.data.error || 'Não consegui salvar no ranking agora.');
+});
 $('#btPlay').addEventListener('click', () => { sfx('start'); show('scrMenu'); refreshMenu(); });
 $('#btToTitle').addEventListener('click', () => show('scrTitle'));
-$('#btSolo').addEventListener('click', () => { renderWorlds(); show('scrSolo'); });
+$('#btSolo').addEventListener('click', () => { if (!requireName()) return; renderWorlds(); show('scrSolo'); });
 for (const b of document.querySelectorAll('[data-back]')) b.addEventListener('click', () => { show('scrMenu'); refreshMenu(); });
-$('#btCreate').addEventListener('click', () => createOnline());
-$('#btJoin').addEventListener('click', () => joinOnline($('#inCode').value));
-$('#inCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinOnline($('#inCode').value); });
+$('#btCreate').addEventListener('click', () => { if (requireName()) createOnline(); });
+$('#btJoin').addEventListener('click', () => { if (requireName()) joinOnline($('#inCode').value); });
+$('#inCode').addEventListener('keydown', e => { if (e.key === 'Enter' && requireName()) joinOnline($('#inCode').value); });
 $('#inCode').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); });
 $('#segKind').addEventListener('click', e => { const b = e.target.closest('button'); if (b && game.host) send(game.me[0], { t:'kind', k: b.dataset.k }); });
-$('#btUltra').addEventListener('click', () => { renderUltra(); show('scrUltra'); });
+$('#btUltra').addEventListener('click', () => { if (!requireName()) return; renderUltra(); show('scrUltra'); });
 $('#segRounds').addEventListener('click', e => { const b = e.target.closest('button'); if (b && game.host) send(game.me[0], { t:'rounds', n: +b.dataset.r }); });
 $('#btStart').addEventListener('click', () => send(game.me[0], { t:'start' }));
 $('#btLeave').addEventListener('click', () => toMenu());
