@@ -745,7 +745,7 @@ class Room {
         if (this.players.length >= 6){ this.out(id, { t:'reject', why:'A sala está cheia (6 pessoas).' }); return; }
         this.out(id, { t:'you', id }); this.add(id, m.name); break;
       case 'name': p.name = publicText(m.name, 14) || p.name; this.sync(); break;
-      case 'rounds': if (isHost && [3,5,7].includes(m.n)){ this.rounds = m.n; this.sync(); } break;
+      case 'rounds': if (isHost && [3,5,7,10].includes(m.n)){ this.rounds = m.n; this.sync(); } break;
       case 'kind': if (isHost && this.phase === 'lobby' && (m.k === 'classic' || m.k === 'ultra')){ this.kind = m.k; this.sync(); } break;
       case 'bet': {
         const text = publicText(m.text, 120); if (!text || this.phase !== 'lobby') return;
@@ -772,7 +772,9 @@ class Room {
     this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play'; this.ending = false;
     // cada rodada tem tempo máximo; labirintos maiores ganham mais tempo
     const ultra = this.kind === 'ultra';
-    const idx = ultra ? Math.min(ULTRA_LEVELS, 2 + (this.round - 1) * 2) : Math.min(95, 3 + (this.round - 1) * 14);
+    // partidas de 10 rodadas sobem a dificuldade mais devagar para não repetir as últimas fases
+    const long = this.rounds > 7;
+    const idx = ultra ? Math.min(ULTRA_LEVELS, long ? this.round : 2 + (this.round - 1) * 2) : Math.min(95, 3 + (this.round - 1) * (long ? 10 : 14));
     const limit = ultra ? 60 + idx * 15 : Math.round(Math.min(270, 120 + idx * 1.5));
     const seed = (this.seed + this.round * 977) >>> 0;
     this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed, kind: ultra ? 'ultra' : 'classic' });
@@ -1784,7 +1786,7 @@ async function loadTop(force){
 }
 setInterval(() => { if (!$('#scrMenu').hidden && !document.hidden) loadTop(true); }, 30000);
 let allRows = null;
-function rankRow(r, mine){
+function boardRow(r, mine){
   const pos = Number.isInteger(r.pos) ? r.pos : null;
   const sub = [r.levels_done + (r.levels_done === 1 ? ' concluída' : ' concluídas')];
   if (r.challenge_levels) sub.push(r.challenge_levels + ' no desafio');
@@ -1805,7 +1807,7 @@ async function loadRanking(){
   }
   const myPos = store.get('rankPos', null);
   $('#rkTotal').textContent = r.data.total === 1 ? '1 jogador' : (r.data.total || 0) + ' jogadores';
-  list.replaceChildren(...(r.data.rows.length ? r.data.rows.map(x => rankRow(x, myPos && x.pos === myPos && x.name === rankName()))
+  list.replaceChildren(...(r.data.rows.length ? r.data.rows.map(x => boardRow(x, myPos && x.pos === myPos && x.name === rankName()))
     : [h('p', { class: 'note' }, 'Ninguém entrou ainda. Seja o primeiro!')]));
 }
 function rankMeText(){
