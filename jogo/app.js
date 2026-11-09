@@ -766,15 +766,22 @@ class Room {
   startMatch(){
     this.phase = 'play'; this.seed = Math.floor(Math.random() * 1e9); this.round = 0; this.totals = {};
     for (const p of this.players) this.totals[p.id] = { pts:0, wins:0, time:0, dots:0 };
-    this.sync(); this.nextRound();
+    this.plan = this.makePlan(); this.sync(); this.nextRound();
+  }
+  // sorteia as fases da partida: uma de cada mundo (ou faixa de mundos), da mais fácil para a mais difícil.
+  // 10 rodadas = um mundo por rodada; 3, 5 ou 7 = mundos sorteados espalhados do começo ao fim.
+  makePlan(){
+    const n = this.rounds, ultra = this.kind === 'ultra', W = ultra ? ULTRA_LEVELS : 10, rnd = k => Math.floor(Math.random() * k);
+    return Array.from({ length: n }, (_, i) => {
+      const lo = Math.floor(i * W / n), hi = Math.max(lo, Math.floor((i + 1) * W / n) - 1), w = lo + rnd(hi - lo + 1);
+      return ultra ? w + 1 : w * 10 + 1 + rnd(10);
+    });
   }
   nextRound(){
     this.round++; this.fin = []; this.lastDots = {}; this.phase = 'play'; this.ending = false;
     // cada rodada tem tempo máximo; labirintos maiores ganham mais tempo
     const ultra = this.kind === 'ultra';
-    // partidas de 10 rodadas sobem a dificuldade mais devagar para não repetir as últimas fases
-    const long = this.rounds > 7;
-    const idx = ultra ? Math.min(ULTRA_LEVELS, long ? this.round : 2 + (this.round - 1) * 2) : Math.min(95, 3 + (this.round - 1) * (long ? 10 : 14));
+    const idx = (this.plan && this.plan[this.round - 1]) || (ultra ? 1 : 1);
     const limit = ultra ? 60 + idx * 15 : Math.round(Math.min(270, 120 + idx * 1.5));
     const seed = (this.seed + this.round * 977) >>> 0;
     this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed, kind: ultra ? 'ultra' : 'classic' });
@@ -984,6 +991,7 @@ function startRound(m){
   game.ghosts = {}; game.deadline = null; game.countdown = 3.2; game.clock = 0; parts = [];
   game.roundEndsAt = performance.now() + (3.2 + (m.limit || 180)) * 1000;
   show(null); sfx('tick');
+  toast('Rodada ' + m.round + ': ' + (L.ultra ? 'Ultra ' + L.idx : 'Mundo ' + (worldIdx(m.idx) + 1) + ' · ' + WORLDS[worldIdx(m.idx)].name + ' (fase ' + m.idx + ')'), 2800);
 }
 function startUltra(n){
   teardown();
