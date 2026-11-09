@@ -235,8 +235,22 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <p class="tag sub8">Labirinto de pixel 8-bit</p>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
-    <p class="ver">Pixel Lab v3.0</p>
+    <p class="ver">Pixel Lab v3.1</p>
     <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
+  </div>
+</section>
+
+<!-- PRIMEIRA VEZ: NOME -->
+<section class="screen" id="scrName" hidden>
+  <div class="wrap">
+    <h1 class="logo">PIXEL<br><span>LAB</span></h1>
+    <form class="card" id="nameForm" novalidate>
+      <h3>Bem-vindo!</h3>
+      <p class="note">Como você se chama? Seu nome aparece no <b>ranking</b> e nas salas com amigos. Dá para trocar depois em Configurações.</p>
+      <input id="inFirst" maxlength="14" autocomplete="given-name" placeholder="Seu nome" enterkeyhint="go">
+      <p class="note err" id="nameErr" role="alert" hidden></p>
+      <button class="main" type="submit">Começar ▶</button>
+    </form>
   </div>
 </section>
 
@@ -268,7 +282,6 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
       <p class="note center" id="podMe" aria-live="polite"></p>
       <button class="main" id="btRankAll">Ver ranking completo</button>
     </div>
-    <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="given-name" placeholder="Seu nome no ranking"></label>
     <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
     <button class="big ultra" id="btUltra">Ultra Labirinto<small>Labirinto gigante, inteiro na tela</small></button>
     <button class="big hot" id="btCreate">Criar sala online<small>Cada um no seu celular, até 6 pessoas</small></button>
@@ -284,7 +297,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
       </div>
       <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
-    <button class="big gear" id="btSettings">Configurações<small>Som, controle e salvar progresso</small></button>
+    <button class="big gear" id="btSettings">Configurações<small>Nome, som, controle e salvar progresso</small></button>
     <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 15 perigos</small></button>
     <button class="ghost" id="btToTitle">Tela inicial</button>
   </div>
@@ -322,7 +335,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <div class="card" id="rkMe">
       <h3>Você no ranking</h3>
       <p class="note" id="rkStatusText"></p>
-      <p class="note">Seu nome é o do menu. Para trocar, volte ao menu e digite outro: o ranking atualiza na hora.</p>
+      <p class="note">Para trocar seu nome, vá em <b>Configurações</b>: o ranking atualiza na hora.</p>
     </div>
     <div class="card">
       <div class="row"><h3 class="grow" id="rkTotal">Jogadores</h3><button class="small" id="rkReload">Atualizar</button></div>
@@ -336,6 +349,10 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
 <section class="screen" id="scrSettings" hidden>
   <div class="wrap">
     <h2>Configurações</h2>
+    <div class="card">
+      <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="given-name" placeholder="Seu nome no ranking"></label>
+      <p class="note">É o nome que aparece no ranking e nas salas com amigos. Trocou aqui, muda no ranking na hora.</p>
+    </div>
     <div class="card">
       <h3>Som</h3>
       <div class="seg" id="segSound"><button data-v="on">Ligado</button><button data-v="off">Mudo</button></div>

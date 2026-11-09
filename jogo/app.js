@@ -33,7 +33,7 @@ function publicText(s, n){
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f]/g,'').trim().slice(0, n);
 let toastT = 0;
 function toast(msg, ms = 3000){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
-const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank','scrSettings'];
+const SCREENS = ['scrTitle','scrMenu','scrHow','scrUltra','scrSolo','scrLobby','scrRound','scrFinal','scrSoloDone','scrPrize','scrPause','scrWait','scrRank','scrSettings','scrName'];
 function show(id){ for (const s of SCREENS) $('#'+s).hidden = (s !== id); const stk = $('#stick'); if (stk) stk.hidden = true; if (id === 'scrMenu'){ const w = $('#scrMenu .wrap'); w.classList.remove('enter'); void w.offsetWidth; w.classList.add('enter'); } }
 function fmtTime(t){ if (t == null) return '—'; const m = Math.floor(t/60), s = t - m*60; return (m ? m+':'+String(Math.floor(s)).padStart(2,'0') : Math.floor(s)) + '.' + Math.floor((s%1)*10) + 's'; }
 function hexRgb(c){ const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -1753,14 +1753,25 @@ async function rankSyncNow(force){
 }
 function updateRankMe(){
   const name = rankName(), pos = store.get('rankPos', null);
-  $('#podMe').textContent = !name ? 'Digite seu nome acima para entrar no ranking.' : pos ? name + ', você está em ' + pos + 'º lugar.' : name + ', jogue uma fase para subir no ranking.';
+  $('#podMe').textContent = !name ? 'Coloque seu nome em Configurações para entrar no ranking.' : pos ? name + ', você está em ' + pos + 'º lugar.' : name + ', jogue uma fase para subir no ranking.';
 }
 function requireName(){
   if (rankName()) return true;
-  const i = $('#inName'); i.classList.remove('shake'); void i.offsetWidth; i.classList.add('shake'); i.focus();
-  toast('Digite seu nome (2 letras ou mais) para jogar e aparecer no ranking.');
-  return false;
+  askName(); return false;
 }
+// primeira vez: pede o nome numa tela própria; depois ele só aparece em Configurações
+function askName(){
+  $('#inFirst').value = store.get('name', ''); $('#nameErr').hidden = true;
+  show('scrName'); setTimeout(() => $('#inFirst').focus(), 250);
+}
+$('#nameForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = clean($('#inFirst').value, 14);
+  if (publicText(v, 14).length < 2){ const er = $('#nameErr'); er.textContent = 'Digite um nome com pelo menos 2 letras.'; er.hidden = false; $('#inFirst').focus(); return; }
+  $('#inName').value = v; commitName(true); sfx('start');
+  show('scrMenu'); refreshMenu();
+  toast('Prazer, ' + publicText(v, 14) + '! Bom jogo.');
+});
 // pódio do menu: 2º, 1º e 3º lugar com o bonequinho de cada um
 const POD_COLORS = [P.gold, '#c9d1e8', '#e08a4a'];
 const sprURL = (c, face) => playerSpr(c, face, false).toDataURL();
@@ -1825,7 +1836,7 @@ async function loadRanking(){
 }
 function rankMeText(){
   const name = rankName(), pos = store.get('rankPos', null), p = rankProgress();
-  $('#rkStatusText').textContent = !name ? 'Você ainda não colocou seu nome. Volte ao menu e digite para aparecer aqui.'
+  $('#rkStatusText').textContent = !name ? 'Você ainda não colocou seu nome. Coloque em Configurações para aparecer aqui.'
     : name + (pos ? ', ' + pos + 'º lugar' : '') + '. Fase ' + p.current_level + ', ' + p.levels_done + (p.levels_done === 1 ? ' concluída.' : ' concluídas.');
 }
 async function openRanking(){
@@ -1945,17 +1956,17 @@ $('#inName').value = store.get('name', '');
 $('#inName').addEventListener('animationend', e => e.target.classList.remove('shake'));
 // troca de nome: salva ao sair do campo ou 1,5 s depois de parar de digitar, e atualiza o ranking na hora
 let nameT = 0;
-async function commitName(){
+async function commitName(quiet){
   clearTimeout(nameT);
   const v = clean($('#inName').value, 14); if (v === store.get('name', '')) return;
   store.set('name', v); updateRankMe();
   if (!rankName()) return;
   const r = await rankSync(true);
-  if (r && r.ok){ loadTop(true); toast('Nome salvo no ranking!'); } else if (r) toast(r.data.error || 'Não consegui salvar no ranking agora. Tento de novo depois.');
+  if (r && r.ok){ loadTop(true); if (quiet !== true) toast('Nome salvo no ranking!'); } else if (r) toast(r.data.error || 'Não consegui salvar no ranking agora. Tento de novo depois.');
 }
 $('#inName').addEventListener('change', commitName);
 $('#inName').addEventListener('input', () => { clearTimeout(nameT); nameT = setTimeout(commitName, 1500); });
-$('#btPlay').addEventListener('click', () => { sfx('start'); show('scrMenu'); refreshMenu(); });
+$('#btPlay').addEventListener('click', () => { sfx('start'); if (!rankName()) return askName(); show('scrMenu'); refreshMenu(); });
 $('#btToTitle').addEventListener('click', () => show('scrTitle'));
 $('#btSolo').addEventListener('click', () => { if (!requireName()) return; renderWorlds(); show('scrSolo'); });
 for (const b of document.querySelectorAll('[data-back]')) b.addEventListener('click', () => { show('scrMenu'); refreshMenu(); });
@@ -1995,7 +2006,7 @@ window.__fneonBack = () => {
   if (vis === 'scrPause'){ game.paused = false; show(null); return true; }
   if (vis === 'scrSettings'){ closeSettings(); return true; }
   if (vis === 'scrSolo' || vis === 'scrPrize' || vis === 'scrHow' || vis === 'scrUltra' || vis === 'scrRank'){ show('scrMenu'); refreshMenu(); return true; }
-  if (vis === 'scrMenu'){ show('scrTitle'); return true; }
+  if (vis === 'scrMenu' || vis === 'scrName'){ show('scrTitle'); return true; }
   if (vis && vis !== 'scrTitle'){ toMenu(); return true; }
   return false;
 };
@@ -2028,7 +2039,7 @@ moveToNewHome(); finishMove();
 buildLegend(); resize(); refreshMenu(); show('scrTitle');
 // abrir pelo link de convite: vai direto para o menu com o código preenchido
 const qs = new URLSearchParams(location.search).get('sala');
-if (qs){ $('#inCode').value = clean(qs, 4).toUpperCase(); show('scrMenu'); setTimeout(() => { $('#inName').focus(); toast('Digite seu nome e toque em Entrar.'); }, 300); }
+if (qs){ $('#inCode').value = clean(qs, 4).toUpperCase(); if (!rankName()) askName(); else { show('scrMenu'); refreshMenu(); setTimeout(() => toast('Toque em Entrar para ir para a sala.'), 300); } }
 // guarda o jogo no aparelho (funciona sem internet depois da primeira visita)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 requestAnimationFrame(frame);
