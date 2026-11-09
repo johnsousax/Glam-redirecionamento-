@@ -1,6 +1,6 @@
 // Pixel Lab: guarda o jogo no aparelho para abrir sem internet (modo sozinho e Ultra Labirinto).
 // Estratégia: tenta a rede primeiro (para sempre pegar a versão nova) e usa a cópia guardada quando estiver offline.
-const CACHE = 'pixelfuga-v20';
+const CACHE = 'pixelfuga-v21';
 const SHELL = ['/', '/index.html', '/peerjs.min.js', '/app.js', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-32.png', '/icons/icon-180.png'];
 
 self.addEventListener('install', e => {

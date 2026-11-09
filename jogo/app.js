@@ -759,7 +759,7 @@ class Room {
         this.out(target.id, { t:'reject', why:'Quem criou a sala removeu você.' });
         this.leave(target.id); if (this.onKick) this.onKick(target.id); break; }
       case 'again': if (isHost && this.phase === 'final'){ this.phase = 'lobby'; this.players = this.players.filter(p => p.on); this.sync(); this.out(null, { t:'toLobby' }); } break;
-      case 'pos': if (this.phase === 'play'){ this.lastDots[id] = m.g | 0; this.out(null, { t:'pos', id, x: +m.x || 0, y: +m.y || 0, d: m.d ? 1 : 0, f: m.f ? 1 : 0 }, id); } break;
+      case 'pos': if (this.phase === 'play'){ this.lastDots[id] = this.dotsOk(m.g); this.out(null, { t:'pos', id, x: +m.x || 0, y: +m.y || 0, d: m.d ? 1 : 0, f: m.f ? 1 : 0 }, id); } break;
       case 'finish': this.finish(id, m); break;
     }
   }
@@ -778,7 +778,8 @@ class Room {
     const limit = ultra ? 60 + idx * 15 : Math.round(Math.min(270, 120 + idx * 1.5));
     const seed = (this.seed + this.round * 977) >>> 0;
     this.out(null, { t:'round', round: this.round, rounds: this.rounds, idx, limit, seed, kind: ultra ? 'ultra' : 'classic' });
-    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(ultra ? genUltra(idx, seed, ULTRA_ONLINE_AREA) : genLevel(idx, seed));
+    const L = ultra ? genUltra(idx, seed, ULTRA_ONLINE_AREA) : genLevel(idx, seed);
+    this.roundStartAt = Date.now() + 3200; this.minTime = minFinishTime(L); this.maxDots = L.totalDots | 0;
     clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), (3.2 + limit) * 1000 + 600);
   }
   finish(id, m){
@@ -786,7 +787,7 @@ class Room {
     // chegada mais rápida que o caminho mais curto possível = recusada
     const elapsed = (Date.now() - (this.roundStartAt || 0)) / 1000;
     if (this.minTime && elapsed < this.minTime * 0.85 - 0.5) return;
-    this.fin.push({ id, time: Math.max(0, +m.time || 0), dots: m.g | 0 });
+    this.fin.push({ id, time: Math.max(0, +m.time || 0), dots: this.dotsOk(m.g) });
     this.out(null, { t:'finished', id, place: this.fin.length, time: +m.time || 0 });
     this.checkAllDone();
   }
@@ -797,8 +798,11 @@ class Room {
     const needed = active.length <= 2 ? 1 : active.length - 1;
     if (done > 0 && done >= needed){ this.ending = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.endRound(), 1400); }
   }
+  // pontinhos informados pelo jogador: nunca mais do que a fase tem
+  dotsOk(g){ return Math.max(0, Math.min(this.maxDots || 0, g | 0)); }
+  // empate em pontos: ganha quem pegou mais pontinhos brancos na partida
   ranking(){
-    return this.players.map(p => ({ id: p.id, ...this.totals[p.id] })).sort((a, b) => b.pts - a.pts || b.wins - a.wins || a.time - b.time || b.dots - a.dots);
+    return this.players.map(p => ({ id: p.id, ...this.totals[p.id] })).sort((a, b) => b.pts - a.pts || b.dots - a.dots || b.wins - a.wins || a.time - b.time);
   }
   endRound(){
     if (this.phase !== 'play') return;
@@ -1084,6 +1088,7 @@ function onRunnerFinish(r){
   send(r.id, { t:'finish', time: +r.time.toFixed(2), g: r.dots });
 }
 function statRow(k, v){ return h('div', { class:'rk', style:'grid-template-columns:1fr auto' }, h('span', { class:'nm' }, k), h('span', { class:'pts' }, v)); }
+const dotsTxt = t => t && t.dots ? t.dots + (t.dots === 1 ? ' pontinho' : ' pontinhos') : '';
 function rankRow(pos, id, main, sub, first){
   return h('div', { class:'rk' + (first ? ' first' : '') }, h('span', { class:'pos' }, pos), h('span', { class:'sw', style:'background:' + pcolor(id) }),
     h('span', { class:'nm' }, pname(id)), h('span', { class:'pts' }, main, sub ? h('small', null, sub) : null));
@@ -1093,7 +1098,7 @@ function showRoundEnd(m){
   $('#rdTitle').textContent = 'Rodada ' + m.round + ' de ' + m.rounds + (m.void ? ': não contou' : '');
   if (m.void) $('#rdThis').replaceChildren(h('p', { class:'note' }, 'O tempo acabou e ninguém chegou na porta. Esta rodada não vale ponto para ninguém.'));
   else $('#rdThis').replaceChildren(...m.results.map(r => rankRow(r.place ? r.place + 'º' : '—', r.id, '+' + r.pts, r.time != null ? fmtTime(r.time) : 'não chegou', r.place === 1)));
-  $('#rdTotal').replaceChildren(...m.totals.map((t, i) => rankRow((i + 1) + 'º', t.id, t.pts + (t.pts === 1 ? ' pt' : ' pts'), null, i === 0)));
+  $('#rdTotal').replaceChildren(...m.totals.map((t, i) => rankRow((i + 1) + 'º', t.id, t.pts + (t.pts === 1 ? ' pt' : ' pts'), dotsTxt(t), i === 0)));
   $('#rdNext').textContent = m.last ? 'Calculando o resultado final…' : 'Próximo labirinto já já…';
   show('scrRound');
 }
@@ -1101,7 +1106,9 @@ function showFinal(m){
   game.phase = 'final';
   const rk = m.ranking, w = rk[0];
   $('#fnWinner').textContent = w ? pname(w.id) + ' venceu!' : 'Fim!';
-  $('#fnRank').replaceChildren(...rk.map((t, i) => rankRow((i + 1) + 'º', t.id, t.pts + (t.pts === 1 ? ' pt' : ' pts'), t.wins ? t.wins + (t.wins > 1 ? ' vitórias' : ' vitória') : null, i === 0)));
+  $('#fnRank').replaceChildren(...rk.map((t, i) => rankRow((i + 1) + 'º', t.id, t.pts + (t.pts === 1 ? ' pt' : ' pts'), [t.wins ? t.wins + (t.wins > 1 ? ' vitórias' : ' vitória') : '', dotsTxt(t)].filter(Boolean).join(' · ') || null, i === 0)));
+  // desempate pelos pontinhos: avisa embaixo do nome do vencedor
+  if (rk[1] && rk[0].pts === rk[1].pts && (rk[0].dots | 0) > (rk[1].dots | 0)) $('#fnWinner').textContent = pname(rk[0].id) + ' venceu no desempate!';
   const fb = $('#fnBet');
   if (m.bet){
     fb.hidden = false;
