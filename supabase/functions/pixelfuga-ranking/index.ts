@@ -1,7 +1,7 @@
 // Ranking e cópia do progresso do Pixel Lab (antigo Pixel Fuga).
-// GET  -> lista pública (top 100): apelido, fase atual, fases concluídas, fases do desafio.
+// GET  -> lista pública (top 100): nome, fase atual, fases concluídas, fases do desafio.
 // POST -> { device, action: 'save' | 'me' | 'delete' | 'backup' | 'restore', name?, progress?, data?, code? }
-//   backup:  guarda a cópia do progresso do aparelho, ligada ao código de recuperação curto (ABCD-EFGH).
+//   backup:  junta a cópia do progresso do aparelho com a guardada (fica o melhor de cada fase), ligada ao código curto (ABCD-EFGH).
 //   restore: { device (aparelho novo), code } devolve a cópia e passa a linha do ranking para o aparelho novo.
 //            Sem code, aceita o formato antigo (device = código longo do aparelho antigo).
 // Só esta função toca nas tabelas pixelfuga_* (service role). As tabelas não têm acesso público.
@@ -48,6 +48,26 @@ function cleanName(raw: unknown) {
 // só os campos públicos saem da função (nunca o código do aparelho)
 const pub = (r: any, pos: number | null) => ({ pos, name: r.name, current_level: r.current_level, levels_done: r.levels_done,
   challenge_levels: r.challenge_levels, ultra_done: r.ultra_done, won: r.challenge_levels >= 100 });
+// junta a cópia nova com a que já está guardada, ficando com o melhor de cada fase (nada se perde)
+const obj = (v: unknown) => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, any> : {};
+function mergeSave(oldD: unknown, incD: unknown) {
+  const o = obj(oldD), n = obj(incD), out: Record<string, any> = { ...o, ...n };
+  const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+  for (const k of ["soloMax", "ultraMax"]) if (o[k] != null || n[k] != null) out[k] = Math.max(num(o[k]), num(n[k]));
+  const ub: Record<string, number> = { ...obj(o.ultraBest) };
+  for (const [k, v] of Object.entries(obj(n.ultraBest))) { const t = num(v); if (t > 0 && (!ub[k] || t < ub[k])) ub[k] = t; }
+  if (Object.keys(ub).length) out.ultraBest = ub;
+  const cl: Record<string, any> = { ...obj(obj(o.camp).l) };
+  for (const [k, e] of Object.entries(obj(obj(n.camp).l))) {
+    if (!Array.isArray(e) || e.length < 3) continue;
+    const old = cl[k];
+    if (!Array.isArray(old) || num(old[2]) < num(e[2]) || (num(old[2]) === num(e[2]) && num(e[0]) < num(old[0]))) cl[k] = e;
+  }
+  if (o.camp || n.camp) out.camp = { v: 1, l: cl };
+  if (o.prizeSeen || n.prizeSeen) out.prizeSeen = true;
+  if (!n.name && o.name) out.name = o.name;
+  return out;
+}
 const int = (v: unknown, min: number, max: number) => {
   const n = Number(v);
   return Number.isInteger(n) && n >= min && n <= max ? n : null;
@@ -110,9 +130,11 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
     if (!d || typeof d !== "object" || Array.isArray(d)) return reply(h, 400, { error: "Dados inválidos." });
     const okKeys = new Set(["v", "soloMax", "soloLast", "ultraMax", "ultraBest", "camp", "name", "prizeSeen"]);
     if (Object.keys(d).some((k) => !okKeys.has(k))) return reply(h, 400, { error: "Dados inválidos." });
-    const text = JSON.stringify(d);
-    if (text.length > MAX_SAVE) return reply(h, 413, { error: "Dados grandes demais." });
-    const row: Record<string, unknown> = { device_hash: deviceHash, data: d, updated_at: new Date(now).toISOString() };
+    if (JSON.stringify(d).length > MAX_SAVE) return reply(h, 413, { error: "Dados grandes demais." });
+    const { data: cur } = await db.from("pixelfuga_saves").select("data").eq("device_hash", deviceHash).maybeSingle();
+    const merged = mergeSave(cur?.data, d);
+    if (JSON.stringify(merged).length > MAX_SAVE) return reply(h, 413, { error: "Dados grandes demais." });
+    const row: Record<string, unknown> = { device_hash: deviceHash, data: merged, updated_at: new Date(now).toISOString() };
     if (codeHash) row.code_hash = codeHash;
     const { error } = await db.from("pixelfuga_saves").upsert(row);
     if (error) {
@@ -152,7 +174,7 @@ export async function handle(req: Request, db: any, ip: string): Promise<Respons
   if (body.action !== "save") return reply(h, 400, { error: "Ação inválida." });
 
   const name = cleanName(body.name);
-  if (!name) return reply(h, 400, { error: "Digite um apelido com pelo menos 2 letras." });
+  if (!name) return reply(h, 400, { error: "Digite um nome com pelo menos 2 letras." });
   const p = body.progress && typeof body.progress === "object" ? body.progress : {};
   let cur = int(p.current_level, 1, 1000), done = int(p.levels_done, 0, 1000), chal = int(p.challenge_levels, 0, 100),
     ultra = int(p.ultra_done, 0, 10), secs = int(p.total_time_s, 0, 100000000);

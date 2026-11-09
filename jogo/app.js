@@ -1700,7 +1700,7 @@ function buildLegend(){
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const m = /^<b>(.*?)<\/b>\s*(.*)$/.exec(html); return [h('img', { src, alt: '' }), h('span', null, h('b', null, m ? m[1] : ''), m ? ' ' + m[2] : html)]; }));
 }
 /* ============================== ranking ============================== */
-// Todo jogador com apelido aparece no ranking. Só o apelido e as fases são públicos.
+// Todo jogador com nome aparece no ranking. Só o nome e as fases são públicos.
 const RANK_URL = 'https://vpldivsicywvnvyczkhz.supabase.co/functions/v1/pixelfuga-ranking';
 function deviceId(){
   let d = store.get('dev', '');
@@ -1711,7 +1711,7 @@ function deviceId(){
   }
   return d;
 }
-// apelido válido para o ranking (o mesmo que aparece nas salas)
+// nome válido para o ranking (o mesmo que aparece nas salas)
 function rankName(){ const n = publicText(store.get('name', ''), 14); return n.length >= 2 ? n : null; }
 function rankProgress(){
   const c = loadCamp(); let done = 0, t = 0;
@@ -1728,12 +1728,18 @@ async function rankCall(body){
   }catch(e){ return { ok: false, status: 0, data: { error: 'Sem conexão. Confira a internet e tente de novo.' } }; }
   finally{ clearTimeout(to); }
 }
-let rankBusy = false, rankLast = 0, rankLastName = '';
-// manda apelido e fase (ao trocar o apelido, depois de cada fase e ao abrir o menu, no máximo a cada 20 s)
-async function rankSync(force){
-  const name = rankName(); if (!name || rankBusy || (!force && name === rankLastName && Date.now() - rankLast < 20000)) return null;
-  rankBusy = true; rankLast = Date.now();
-  try{
+let rankChain = Promise.resolve(), rankLast = 0, rankLastName = '';
+// manda nome e fase (ao trocar o nome, depois de cada fase e ao abrir o menu, no máximo a cada 20 s).
+// Os envios entram numa fila: um nome trocado durante outro envio não se perde.
+function rankSync(force){
+  const p = rankChain.then(() => rankSyncNow(force));
+  rankChain = p.catch(() => {});
+  return p;
+}
+async function rankSyncNow(force){
+  const name = rankName(); if (!name || (!force && name === rankLastName && Date.now() - rankLast < 20000)) return null;
+  await pullOnce(); rankLast = Date.now();
+  {
     const r = await rankCall({ device: deviceId(), action: 'save', name, progress: rankProgress() });
     if (r.ok){
       rankLastName = name;
@@ -1743,16 +1749,16 @@ async function rankSync(force){
       updateRankMe();
     }
     return r;
-  } finally { rankBusy = false; }
+  }
 }
 function updateRankMe(){
   const name = rankName(), pos = store.get('rankPos', null);
-  $('#podMe').textContent = !name ? 'Digite seu apelido acima para entrar no ranking.' : pos ? name + ', você está em ' + pos + 'º lugar.' : name + ', jogue uma fase para subir no ranking.';
+  $('#podMe').textContent = !name ? 'Digite seu nome acima para entrar no ranking.' : pos ? name + ', você está em ' + pos + 'º lugar.' : name + ', jogue uma fase para subir no ranking.';
 }
 function requireName(){
   if (rankName()) return true;
   const i = $('#inName'); i.classList.remove('shake'); void i.offsetWidth; i.classList.add('shake'); i.focus();
-  toast('Digite seu apelido (2 letras ou mais) para jogar e aparecer no ranking.');
+  toast('Digite seu nome (2 letras ou mais) para jogar e aparecer no ranking.');
   return false;
 }
 // pódio do menu: 2º, 1º e 3º lugar com o bonequinho de cada um
@@ -1819,7 +1825,7 @@ async function loadRanking(){
 }
 function rankMeText(){
   const name = rankName(), pos = store.get('rankPos', null), p = rankProgress();
-  $('#rkStatusText').textContent = !name ? 'Você ainda não tem apelido. Volte ao menu e digite um para aparecer aqui.'
+  $('#rkStatusText').textContent = !name ? 'Você ainda não colocou seu nome. Volte ao menu e digite para aparecer aqui.'
     : name + (pos ? ', ' + pos + 'º lugar' : '') + '. Fase ' + p.current_level + ', ' + p.levels_done + (p.levels_done === 1 ? ' concluída.' : ' concluídas.');
 }
 async function openRanking(){
@@ -1876,9 +1882,18 @@ function saveSnapshot(){
   d.camp = loadCamp(); return d;
 }
 let lastBackup = 0, backupBusy = false;
+// ao abrir, puxa a cópia da nuvem e junta com a do aparelho (o que foi liberado em outro lugar chega aqui)
+let pulled = null;
+function pullOnce(){
+  return pulled || (pulled = rankCall({ device: deviceId(), action: 'restore' }).then(r => {
+    if (r.ok && r.data && r.data.data){ const before = soloMax(); mergeSave(r.data.data); if (soloMax() !== before && !$('#scrMenu').hidden) refreshMenu(); if (!$('#inName').value) $('#inName').value = store.get('name', ''); }
+    else if (r.status !== 404) pulled = null; // sem internet: tenta de novo na próxima vez
+  }));
+}
 async function cloudBackup(force){
   if (backupBusy || (!force && Date.now() - lastBackup < 20000)) return null;
   backupBusy = true; lastBackup = Date.now();
+  await pullOnce();
   try{
     let r = await rankCall({ device: deviceId(), action: 'backup', code: rcode(), data: saveSnapshot() });
     if (r.status === 409 && r.data.retry){ store.set('rcode', newCode()); r = await rankCall({ device: deviceId(), action: 'backup', code: rcode(), data: saveSnapshot() }); if (!$('#scrSettings').hidden) renderSettings(); }
@@ -1928,10 +1943,18 @@ $('#svLoad').addEventListener('click', async () => {
 });
 $('#inName').value = store.get('name', '');
 $('#inName').addEventListener('animationend', e => e.target.classList.remove('shake'));
-$('#inName').addEventListener('change', async () => {
-  store.set('name', clean($('#inName').value, 14)); updateRankMe();
-  const r = await rankSync(true); if (r && r.ok){ loadTop(true); toast('Apelido salvo no ranking!'); } else if (r) toast(r.data.error || 'Não consegui salvar no ranking agora.');
-});
+// troca de nome: salva ao sair do campo ou 1,5 s depois de parar de digitar, e atualiza o ranking na hora
+let nameT = 0;
+async function commitName(){
+  clearTimeout(nameT);
+  const v = clean($('#inName').value, 14); if (v === store.get('name', '')) return;
+  store.set('name', v); updateRankMe();
+  if (!rankName()) return;
+  const r = await rankSync(true);
+  if (r && r.ok){ loadTop(true); toast('Nome salvo no ranking!'); } else if (r) toast(r.data.error || 'Não consegui salvar no ranking agora. Tento de novo depois.');
+}
+$('#inName').addEventListener('change', commitName);
+$('#inName').addEventListener('input', () => { clearTimeout(nameT); nameT = setTimeout(commitName, 1500); });
 $('#btPlay').addEventListener('click', () => { sfx('start'); show('scrMenu'); refreshMenu(); });
 $('#btToTitle').addEventListener('click', () => show('scrTitle'));
 $('#btSolo').addEventListener('click', () => { if (!requireName()) return; renderWorlds(); show('scrSolo'); });
