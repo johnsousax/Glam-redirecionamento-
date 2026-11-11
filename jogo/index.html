@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d0b1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pixel Lab">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<title>Pixel Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: canvas de pixels em tela cheia para o jogo; telas de menu numa coluna estreita de "janelas" de fliperama por cima. */
+:root{
+  --ink:#0d0b1a;      /* fundo */
+  --night:#1b1838;    /* janelas */
+  --dusk:#2e2a5c;     /* botões e campos */
+  --violet:#4b3f8f;   /* bordas */
+  --cream:#f4f1de;    /* texto */
+  --muted:#a9a3cf;    /* texto secundário */
+  --gold:#ffd23f;     /* destaque / iniciar */
+  --orange:#ff8c2e;   /* jogador 1 */
+  --pink:#ff77a8;     /* aposta / perigo */
+  --teal:#2fb9c9;
+  --lime:#a6e85a;
+  --red:#e8435a;
+  --pixel:'Press Start 2P','Courier New',monospace;
+  --body:'VT323','Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);font-size:21px;line-height:1.15;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{overflow:hidden;touch-action:none}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:40;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated}
+#probe{position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.screen{position:fixed;inset:0;z-index:5;overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;align-items:center;
+  padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background-color:var(--ink);
+  background-image:linear-gradient(rgba(75,63,143,.18) 2px,transparent 2px),linear-gradient(90deg,rgba(75,63,143,.18) 2px,transparent 2px);
+  background-size:32px 32px}
+.screen.over{background-color:rgba(13,11,26,.88)}
+.wrap{width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px;margin:auto 0}
+.logo{font-family:var(--pixel);font-weight:400;font-size:clamp(26px,8.5vw,36px);line-height:1.25;text-align:center;margin:6px 0 0;letter-spacing:.02em;color:var(--gold);
+  text-shadow:3px 3px 0 var(--red),6px 6px 0 #000}
+.logo span{color:var(--teal);text-shadow:3px 3px 0 var(--violet),6px 6px 0 #000}
+.tag{text-align:center;color:var(--muted);margin:0}
+.sub8{font-family:var(--pixel);font-size:10px;line-height:1.6;color:var(--mint,#8af0e6);letter-spacing:.06em;text-transform:uppercase;margin-top:-6px}
+h2{font-family:var(--pixel);font-weight:400;font-size:16px;line-height:1.5;margin:0;color:var(--gold);text-shadow:2px 2px 0 #000;text-wrap:balance}
+h3{font-family:var(--pixel);font-weight:400;font-size:10px;line-height:1.6;letter-spacing:.04em;color:var(--gold);margin:0;text-transform:uppercase}
+.card{background:var(--night);border:3px solid var(--violet);box-shadow:5px 5px 0 #000;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{min-width:0}
+.grow{flex:1}
+label.f{display:flex;flex-direction:column;gap:8px;font-family:var(--pixel);font-size:10px;color:var(--gold);text-transform:uppercase}
+input,textarea{font-family:var(--body);font-size:24px;color:var(--cream);background:var(--ink);border:3px solid var(--violet);border-radius:0;padding:8px 10px;width:100%;
+  -webkit-user-select:text;user-select:text}
+textarea{resize:none;min-height:70px;line-height:1.1}
+input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+input.code{font-family:var(--pixel);font-size:20px;text-transform:uppercase;letter-spacing:.3em;text-align:center;padding:12px 6px}
+#svCode{font-size:26px;letter-spacing:.12em;-webkit-user-select:all;user-select:all}
+#svIn{font-size:16px;letter-spacing:.12em}
+button,a.btn{font-family:var(--pixel);font-weight:400;font-size:12px;line-height:1.5;letter-spacing:.02em;text-transform:uppercase;text-decoration:none;text-align:center;
+  color:var(--cream);background:var(--dusk);border:3px solid #000;border-radius:0;padding:13px 12px;cursor:pointer;box-shadow:4px 4px 0 #000;display:block}
+button:active,a.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
+button:focus-visible,a.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+button.main,a.btn.main{background:var(--gold);color:var(--ink)}
+button.hot{background:var(--pink);color:var(--ink)}
+button.teal{background:var(--teal);color:var(--ink)}
+button.ghost{background:transparent;border-color:var(--violet);box-shadow:none}
+button.small,a.btn.small{padding:9px 9px;font-size:9px;box-shadow:3px 3px 0 #000}
+.big{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:15px 14px}
+.big small{font-family:var(--body);font-size:20px;text-transform:none;letter-spacing:0;opacity:.85}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:11px 0;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--ink)}
+.players{display:flex;flex-direction:column;gap:8px}
+.pl{display:flex;align-items:center;gap:10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 8px;min-height:46px}
+.pl .sw{width:18px;height:18px;flex:none;box-shadow:2px 2px 0 #000}
+.pl .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px}
+.pl input{padding:4px 8px;font-size:22px;border-width:2px}
+.pill{font-family:var(--pixel);font-size:8px;line-height:1;text-transform:uppercase;padding:5px 6px;white-space:nowrap;border:2px solid var(--violet);color:var(--muted)}
+.pill.yes{color:var(--ink);background:var(--lime);border-color:#000}
+.pill.no{color:var(--cream);background:var(--red);border-color:#000}
+.pill.host{color:var(--gold);border-color:var(--gold)}
+.bet{border-color:var(--pink)}
+.bet .quote{font-size:28px;line-height:1.05;color:#fff;text-wrap:balance}
+.bet .quote::before{content:"“";color:var(--pink)}
+.bet .quote::after{content:"”";color:var(--pink)}
+.note{font-size:19px;color:var(--muted);line-height:1.15;margin:0}
+.note b{color:var(--cream);font-weight:400}
+.codebox{font-family:var(--pixel);font-size:34px;letter-spacing:.2em;text-align:center;color:var(--gold);text-shadow:4px 4px 0 var(--red);padding:6px 0}
+.center{text-align:center}
+.rank{display:flex;flex-direction:column;gap:6px}
+.rk{display:grid;grid-template-columns:40px 18px 1fr auto;align-items:center;gap:10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 10px;font-variant-numeric:tabular-nums}
+.rk .pos{font-family:var(--pixel);font-size:12px;color:var(--muted)}
+.rk.first .pos{color:var(--gold)}
+.rk .sw{width:16px;height:16px;box-shadow:2px 2px 0 #000}
+.rk .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px}
+.rk .pts{font-size:24px}
+.rk .pts{text-align:right}
+.rk .pts small{display:block;color:var(--muted);font-size:18px;line-height:1}
+.winner{font-family:var(--pixel);font-size:20px;line-height:1.5;text-align:center;color:var(--gold);text-shadow:3px 3px 0 var(--red);text-wrap:balance}
+.verdict{font-size:24px;line-height:1.2}
+.verdict b{color:#fff;font-weight:400}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;background:var(--night);border:3px solid var(--gold);
+  box-shadow:4px 4px 0 #000;color:var(--cream);padding:10px 14px;font-size:21px;max-width:calc(100% - 32px);text-align:center}
+.world{display:flex;flex-direction:column;gap:10px}
+.world .wh{display:flex;align-items:center;gap:10px}
+.world .wh i{width:22px;height:22px;flex:none;box-shadow:2px 2px 0 #000}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.levels button{padding:10px 0;font-size:11px;box-shadow:3px 3px 0 #000}
+.levels button.cur{background:var(--gold);color:var(--ink)}
+.levels button.done{background:var(--violet)}
+.how{display:grid;grid-template-columns:32px 1fr;gap:8px 12px;align-items:center}
+.how img{width:32px;height:32px;image-rendering:pixelated;display:block}
+.how span{font-size:20px;color:var(--muted)}
+.how b{color:var(--cream);font-weight:400}
+/* tela inicial */
+#scrTitle{justify-content:center;background-image:none}
+#tcv{width:100%;max-width:520px;aspect-ratio:136/96;image-rendering:pixelated;display:block;margin:0 auto}
+.press{font-size:15px;padding:17px 12px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{background:#fff3b0}}
+.by{display:block;text-align:center;font-family:var(--pixel);font-size:11px;line-height:1.6;color:var(--pink);text-decoration:none;padding:8px}
+.by:hover,.by:focus-visible{color:#fff;outline:none;text-decoration:underline}
+.ver{text-align:center;color:var(--violet);font-size:18px;margin:0}
+.mini{display:block;text-align:center;font-family:var(--pixel);font-size:8px;line-height:1.6;color:var(--muted);text-decoration:underline;padding:6px}
+.mini:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* desafio do prêmio */
+.prize{border-color:var(--gold);background:linear-gradient(180deg,#2a2208,var(--night))}
+.prizeval{font-family:var(--pixel);font-size:34px;line-height:1.3;text-align:center;color:var(--lime);text-shadow:4px 4px 0 #000}
+.bar{height:14px;border:3px solid #000;background:var(--ink);box-shadow:3px 3px 0 #000}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--gold) 0 6px,var(--orange) 6px 8px)}
+details summary{font-family:var(--pixel);font-size:10px;color:var(--gold);cursor:pointer;line-height:1.8}
+details summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.rules{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:19px;color:var(--muted)}
+.rules b{color:var(--cream);font-weight:400}
+.prizeHead{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;box-shadow:none;padding:2px 0;font-size:13px;color:var(--gold);text-align:left}
+.prizeHead:active{transform:none;box-shadow:none}
+.prizeHead .chev{display:inline-block;transition:transform .15s steps(2)}
+.prizeHead[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pzbody{display:flex;flex-direction:column;gap:12px}
+.big.ultra{background:#f3ecdc;color:#b23a1a;border-color:#000}
+.big.ultra small{color:#5a2a14}
+.levels button.perfect{background:var(--lime);color:var(--ink)}
+/* ranking */
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:2px 10px;background:var(--ink);border:2px solid var(--dusk);padding:6px 10px;font-variant-numeric:tabular-nums;
+  animation:rowin .3s steps(3) both;animation-delay:var(--d,0s)}
+.rrow.me{border-color:var(--gold)}
+.rrow .pos{font-family:var(--pixel);font-size:11px;color:var(--muted);grid-row:1/3}
+.rrow.t1 .pos{color:var(--gold)}.rrow.t2 .pos{color:#c9d1e8}.rrow.t3 .pos{color:#e08a4a}
+.rrow .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:24px;line-height:1.05}
+.rrow .lv{text-align:right;font-size:22px;line-height:1.05;white-space:nowrap;color:var(--gold)}
+.rrow .sub{grid-column:2/4;color:var(--muted);font-size:17px;line-height:1.05}
+.rrow .pill{margin-left:6px;vertical-align:2px}
+@keyframes rowin{from{opacity:0;transform:translateX(-12px)}}
+.err{color:var(--pink)}
+.big.gear{background:var(--lav);color:#fff}
+.codebox.small{font-size:15px;letter-spacing:.08em;word-break:break-all;line-height:1.7;text-shadow:2px 2px 0 var(--red);-webkit-user-select:all;user-select:all}
+#stick{position:fixed;z-index:6;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid rgba(244,241,222,.5);background:rgba(13,11,26,.35);pointer-events:none}
+#stick i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(255,210,63,.85);box-shadow:0 0 0 3px #000}
+/* pódio do menu */
+.podium{border-color:var(--lav);background:linear-gradient(180deg,#241d4d,var(--night));overflow:hidden;position:relative}
+.live{display:inline-block;width:8px;height:8px;background:var(--red);box-shadow:0 0 0 2px #000;margin-right:8px;vertical-align:1px;animation:blink2 1s steps(1) infinite}
+@keyframes blink2{50%{opacity:.2}}
+.podcols{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:8px;min-height:190px;padding-top:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;text-align:center}
+.pod .pav{width:36px;height:36px;image-rendering:pixelated;display:block}
+.pod.p1 .pav{width:44px;height:44px}
+.pod .crown{width:28px;height:18px;image-rendering:pixelated;display:block;margin-bottom:-4px}
+.pod .pnm{font-size:21px;line-height:1;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod.p1 .pnm{color:var(--gold);font-size:23px}
+.pod .plv{font-size:17px;color:var(--muted);line-height:1}
+.pod .pbar{width:100%;border:3px solid #000;box-shadow:3px 3px 0 #000;display:flex;justify-content:center;align-items:flex-start;padding-top:6px;transform-origin:bottom}
+.pod .pbar b{font-family:var(--pixel);font-weight:400;font-size:14px;color:var(--ink)}
+.pod.p1 .pbar{height:74px;background:repeating-linear-gradient(90deg,var(--gold) 0 10px,#ffe27a 10px 14px)}
+.pod.p2 .pbar{height:52px;background:repeating-linear-gradient(90deg,#c9d1e8 0 10px,#e6ebf7 10px 14px)}
+.pod.p3 .pbar{height:38px;background:repeating-linear-gradient(90deg,#e08a4a 0 10px,#f2ac76 10px 14px)}
+.pod.empty .pnm,.pod.empty .plv{color:var(--dgray,#55507a)}
+.pod.empty .pav{opacity:.45}
+.podcols.go .pbar{animation:rise .5s steps(5) both;animation-delay:var(--d)}
+.podcols.go .pav,.podcols.go .crown{animation:drop .45s steps(4) both;animation-delay:calc(var(--d) + .45s)}
+.podcols.go .pnm,.podcols.go .plv{animation:fadein .3s steps(3) both;animation-delay:calc(var(--d) + .7s)}
+.pod:not(.empty) .pav{animation-name:drop,hop!important;animation-duration:.45s,1.2s!important;animation-iteration-count:1,infinite!important;animation-timing-function:steps(4),steps(2)!important}
+.pod.p1 .crown{animation:drop .45s steps(4) both,tilt 1.6s steps(2) 1s infinite;animation-delay:calc(var(--d) + .45s),1.2s}
+@keyframes rise{from{transform:scaleY(0)}}
+@keyframes drop{from{opacity:0;transform:translateY(-30px)}}
+@keyframes fadein{from{opacity:0}}
+@keyframes hop{50%{transform:translateY(-5px)}}
+@keyframes tilt{50%{transform:rotate(-12deg) translateY(-2px)}}
+.p1 .pav{position:relative}
+.podium::after{content:"";position:absolute;top:0;left:-40%;width:30%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.07),transparent);animation:sweep 4.5s steps(18) infinite}
+@keyframes sweep{to{left:120%}}
+/* menu mais vivo */
+#scrMenu{animation:gridmove 8s linear infinite}
+@keyframes gridmove{to{background-position:0 32px,32px 0}}
+#scrMenu .logo{animation:float 2.4s steps(4) infinite}
+@keyframes float{50%{transform:translateY(-4px)}}
+#scrMenu .wrap.enter>*{animation:pop .4s steps(4) both}
+#scrMenu .wrap.enter>*:nth-child(2){animation-delay:.05s}#scrMenu .wrap.enter>*:nth-child(3){animation-delay:.1s}
+#scrMenu .wrap.enter>*:nth-child(4){animation-delay:.15s}#scrMenu .wrap.enter>*:nth-child(5){animation-delay:.2s}
+#scrMenu .wrap.enter>*:nth-child(6){animation-delay:.25s}#scrMenu .wrap.enter>*:nth-child(7){animation-delay:.3s}
+#scrMenu .wrap.enter>*:nth-child(n+8){animation-delay:.35s}
+@keyframes pop{from{opacity:0;transform:translateY(14px)}}
+.bar i{background-size:16px 100%;animation:stripes .8s steps(4) infinite}
+@keyframes stripes{to{background-position:16px 0}}
+.big.main{position:relative;overflow:hidden}
+.big.main::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:20%;background:rgba(255,255,255,.35);transform:skewX(-20deg);animation:sweep 3.2s steps(16) infinite;pointer-events:none}
+input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@media (prefers-reduced-motion:reduce){.press,#scrMenu,#scrMenu .logo,#scrMenu .wrap.enter>*,.bar i,.big.main::after,.podium::after,.live,.rrow,.pod *,input.shake{animation:none!important}button:active,a.btn:active{transform:none}}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="probe"></div>
+
+<!-- TELA INICIAL -->
+<section class="screen" id="scrTitle">
+  <div class="wrap">
+    <canvas id="tcv" width="136" height="96" aria-label="O bonequinho pinta o nome Pixel Lab"></canvas>
+    <p class="tag sub8">Labirinto de pixel 8-bit</p>
+    <button class="main press" id="btPlay">Iniciar jogo</button>
+    <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
+    <p class="ver">Pixel Lab v3.4</p>
+    <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
+  </div>
+</section>
+
+<!-- PRIMEIRA VEZ: NOME -->
+<section class="screen" id="scrName" hidden>
+  <div class="wrap">
+    <h1 class="logo">PIXEL<br><span>LAB</span></h1>
+    <form class="card" id="nameForm" novalidate>
+      <h3>Bem-vindo!</h3>
+      <p class="note">Como você se chama? Seu nome aparece no <b>ranking</b> e nas salas com amigos. Dá para trocar depois em Configurações.</p>
+      <input id="inFirst" maxlength="14" autocomplete="given-name" placeholder="Seu nome" enterkeyhint="go">
+      <p class="note err" id="nameErr" role="alert" hidden></p>
+      <button class="main" type="submit">Começar ▶</button>
+    </form>
+  </div>
+</section>
+
+<!-- MENU -->
+<section class="screen" id="scrMenu" hidden>
+  <div class="wrap">
+    <h1 class="logo">PIXEL<br><span>LAB</span></h1>
+    <div class="card prize" id="prizeCard">
+      <button class="prizeHead" id="pzToggle" aria-expanded="false" aria-controls="pzBody"><span>Desafio R$ 50</span><span class="chev" aria-hidden="true">▼</span></button>
+      <p class="note" id="pzShort">Zere as 100 fases com pelo menos 80% dos pontinhos e ganhe R$ 50. Toque para ver.</p>
+      <div id="pzBody" class="pzbody" hidden>
+        <p class="note">Termine as <b>100 fases</b> no modo sozinho pegando <b>pelo menos 80% dos pontinhos</b> de cada uma e ganhe <b>R$ 50 no Pix</b>.</p>
+        <div class="bar" role="progressbar" aria-label="Fases com 80% ou mais" aria-valuemin="0" aria-valuemax="100" id="pzBarBox"><i id="pzBar"></i></div>
+        <p class="note" id="pzProg">0 de 100 fases com 80% ou mais</p>
+        <button class="main" id="btClaim" hidden>Resgatar prêmio</button>
+        <h3>Regras</h3>
+        <ul class="rules">
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 80% dos pontinhos</b>, a partir da versão 1.5.</li>
+          <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
+          <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
+          <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card podium" id="podCard">
+      <div class="row"><h3 class="grow"><span class="live" aria-hidden="true"></span>Ranking ao vivo</h3><span class="note" id="podTotal"></span></div>
+      <div class="podcols" id="podCols" aria-label="Os 3 primeiros do ranking"></div>
+      <p class="note center" id="podMe" aria-live="polite"></p>
+      <button class="main" id="btRankAll">Ver ranking completo</button>
+    </div>
+    <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
+    <button class="big ultra" id="btUltra" hidden>Ultra Labirinto<small>Labirinto gigante, inteiro na tela</small></button>
+    <button class="big hot" id="btCreate">Criar sala online<small>Cada um no seu celular, até 6 pessoas</small></button>
+    <div class="card">
+      <h3>Entrar numa sala</h3>
+      <div class="row"><input class="code grow" id="inCode" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters" inputmode="text"><button id="btJoin" class="main">Entrar</button></div>
+    </div>
+    <div class="card" id="appCard" hidden>
+      <h3>Instalar o app</h3>
+      <div id="appAndroid" style="display:flex;flex-direction:column;gap:12px">
+        <a class="btn main" id="apkLink" href="pixel-fuga.apk" download="pixel-fuga.apk">Baixar para Android</a>
+        <p class="note">Depois de baixar, toque no arquivo para instalar. Se o Android avisar, toque em <b>Configurações</b> e permita instalar apps desta fonte. Se aparecer o alerta do Play Protect, toque em <b>Instalar mesmo assim</b>.</p>
+      </div>
+      <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
+    </div>
+    <button class="big gear" id="btSettings">Configurações<small>Nome, som, controle e salvar progresso</small></button>
+    <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 10 perigos</small></button>
+    <button class="ghost" id="btToTitle">Tela inicial</button>
+  </div>
+</section>
+
+<!-- COMO JOGAR -->
+<section class="screen" id="scrHow" hidden>
+  <div class="wrap">
+    <h2>Como jogar</h2>
+    <div class="card"><h3>Controles</h3><p class="note">Deslize o dedo para cima, para baixo, para a esquerda ou para a direita. O bonequinho dispara e só para quando bate numa parede. No computador, use as setas do teclado. Prefere um controle de videogame? Em <b>Configurações</b>, escolha <b>Bolinha</b>: arraste a bolinha para onde quer ir.</p></div>
+    <div class="card"><h3>Objetivo</h3><p class="note">Ache a <b>porta dourada</b> no alto do labirinto. No modo sozinho, a porta fica <b>trancada até você pegar 80% dos pontinhos</b>; o canto de cima da tela mostra quanto você já pegou. Pegando <b>80% ou mais</b>, a fase conta para o Desafio R$ 50. Todas as fases têm saída e deixam chegar em qualquer canto sem precisar recomeçar.</p></div>
+    <div class="card"><h3>Botões</h3><p class="note">O botão de pausa fica no canto de cima à esquerda. O botão de recomeçar (à direita) te leva de volta para o início da fase, e os pontinhos que você já pegou continuam valendo.</p></div>
+    <div class="card"><h3>Os 10 perigos</h3><div class="how" id="legend"></div></div>
+    <div class="card"><h3>Jogar com amigos</h3><p class="note"><b>Sala online:</b> crie a sala e mande o convite pelo WhatsApp. Com 2 jogadores, ganha quem chegar primeiro; com 3 ou mais, a rodada acaba quando o penúltimo chega. Cada rodada tem tempo máximo e, se ninguém chegar, ela não conta.</p></div>
+    <button class="ghost" data-back>Voltar</button>
+  </div>
+</section>
+
+<!-- ULTRA LABIRINTO: escolher fase -->
+<section class="screen" id="scrUltra" hidden>
+  <div class="wrap">
+    <h2>Ultra Labirinto</h2>
+    <p class="note">Um labirinto gigante, inteiro na tela, e um bonequinho pequeno. Deslize para andar: ele para em cada cruzamento para você escolher o caminho e deixa um rastro por onde já passou. Você começa embaixo e a saída pisca no alto. Cada fase tem um visual diferente.</p>
+    <div class="card"><h3>Fases</h3><div class="levels" id="ultraGrid"></div><p class="note" id="ultraNote"></p></div>
+    <button class="ghost" data-back>Voltar</button>
+  </div>
+</section>
+
+<!-- RANKING -->
+<section class="screen" id="scrRank" hidden>
+  <div class="wrap">
+    <h2>Ranking</h2>
+    <p class="note">Todos os jogadores, do mais adiantado para o menos, pela fase em que estão no modo sozinho.</p>
+    <div class="card" id="rkMe">
+      <h3>Você no ranking</h3>
+      <p class="note" id="rkStatusText"></p>
+      <p class="note">Para trocar seu nome, vá em <b>Configurações</b>: o ranking atualiza na hora.</p>
+    </div>
+    <div class="card">
+      <div class="row"><h3 class="grow" id="rkTotal">Jogadores</h3><button class="small" id="rkReload">Atualizar</button></div>
+      <div class="rlist" id="rkList" aria-live="polite"></div>
+    </div>
+    <button class="ghost" data-back>Voltar</button>
+  </div>
+</section>
+
+<!-- CONFIGURAÇÕES -->
+<section class="screen" id="scrSettings" hidden>
+  <div class="wrap">
+    <h2>Configurações</h2>
+    <div class="card">
+      <label class="f">Seu nome<input id="inName" maxlength="14" autocomplete="given-name" placeholder="Seu nome no ranking"></label>
+      <p class="note">É o nome que aparece no ranking e nas salas com amigos. Trocou aqui, muda no ranking na hora.</p>
+    </div>
+    <div class="card">
+      <h3>Som</h3>
+      <div class="seg" id="segSound"><button data-v="on">Ligado</button><button data-v="off">Mudo</button></div>
+      <h3>Vibração</h3>
+      <div class="seg" id="segVib"><button data-v="on">Ligada</button><button data-v="off">Desligada</button></div>
+    </div>
+    <div class="card">
+      <h3>Controle</h3>
+      <div class="seg" id="segCtrl"><button data-v="swipe">Deslizar</button><button data-v="stick">Bolinha</button></div>
+      <p class="note" id="ctrlNote"></p>
+    </div>
+    <div class="card">
+      <h3>Salvar progresso</h3>
+      <p class="note">Seu progresso é guardado na nuvem sozinho. Para continuar em outro celular, anote o <b>código de recuperação</b> abaixo e digite no outro aparelho. Não mostre para ninguém: quem tiver o código pega o seu progresso.</p>
+      <div class="codebox" id="svCode">----</div>
+      <div class="row"><button class="small grow" id="svCopy">Copiar código</button><a class="btn small grow" id="svWa" href="#" target="_blank" rel="noopener noreferrer">Guardar no WhatsApp</a></div>
+      <p class="note" id="svStatus" aria-live="polite"></p>
+      <h3>Recuperar em outro aparelho</h3>
+      <div class="row"><input class="grow code" id="svIn" maxlength="60" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH"><button class="main" id="svLoad">Recuperar</button></div>
+      <p class="note">Entrar com Google: em breve.</p>
+    </div>
+    <button class="ghost" id="btSettingsBack">Voltar</button>
+  </div>
+</section>
+
+<!-- SOLO: escolher fase -->
+<section class="screen" id="scrSolo" hidden>
+  <div class="wrap">
+    <h2>Escolha a fase</h2>
+    <p class="note">São 10 mundos com 10 fases cada. Cada mundo traz perigos novos. Pegue pelo menos 80% dos pontinhos para a porta abrir e liberar a próxima fase. Fases verdes já valem para o desafio (80% ou mais).</p>
+    <div id="worlds" style="display:flex;flex-direction:column;gap:16px"></div>
+    <button class="ghost" data-back>Voltar</button>
+  </div>
+</section>
+
+<!-- LOBBY (local e online) -->
+<section class="screen" id="scrLobby" hidden>
+  <div class="wrap">
+    <div class="card" id="codeCard">
+      <h3 class="center">Código da sala</h3>
+      <div class="codebox" id="lbCode">----</div>
+      <div class="row"><button class="grow small" id="btCopy">Copiar convite</button><a class="btn grow small" id="btShare" href="#" target="_blank" rel="noopener noreferrer">Enviar no WhatsApp</a></div>
+      <p class="note center">Os outros abrem o jogo, digitam esse código e entram. Funciona no mesmo Wi-Fi, no roteador do celular ou pela internet.</p>
+    </div>
+    <div class="card">
+      <h3>Jogadores</h3>
+      <div class="players" id="lbPlayers"></div>
+    </div>
+    <div class="card" id="kindCard" hidden>
+      <h3>Modo</h3>
+      <div class="seg" id="segKind"><button data-k="classic">Clássico</button><button data-k="ultra">Ultra</button></div>
+      <p class="note">Clássico: as fases com perigos. Ultra: labirinto gigante inteiro na tela, quem achar a saída primeiro vence.</p>
+    </div>
+    <div class="card" id="roundsCard">
+      <h3>Rodadas</h3>
+      <div class="seg" id="segRounds"><button data-r="3">3</button><button data-r="5">5</button><button data-r="7">7</button><button data-r="10">10</button></div>
+      <p class="note">Cada rodada é uma fase sorteada de um mundo diferente, do mais fácil ao mais difícil (com 10 rodadas, passa por todos os 10 mundos). Toda rodada tem tempo máximo. Com 2 jogadores, a rodada acaba quando o primeiro chega; com 3 ou mais, quando o penúltimo chega. Se o tempo acabar sem ninguém chegar, a rodada não conta. Empate em pontos no fim: ganha quem pegou mais pontinhos brancos.</p>
+    </div>
+    <div class="card bet" id="betCard"></div>
+    <button class="main" id="btStart">Começar partida</button>
+    <p class="note center" id="lbWait" hidden>Esperando quem criou a sala começar…</p>
+    <button class="ghost" id="btLeave">Sair da sala</button>
+  </div>
+</section>
+
+<!-- RESULTADO DA RODADA -->
+<section class="screen over" id="scrRound" hidden>
+  <div class="wrap">
+    <h2 class="center" id="rdTitle">Rodada 1 de 3</h2>
+    <div class="card"><h3>Nesta rodada</h3><div class="rank" id="rdThis"></div></div>
+    <div class="card"><h3>Placar geral</h3><div class="rank" id="rdTotal"></div></div>
+    <p class="note center" id="rdNext">Próximo labirinto já já…</p>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="screen over" id="scrFinal" hidden>
+  <div class="wrap">
+    <h3 class="center">Fim de partida</h3>
+    <div class="winner" id="fnWinner">—</div>
+    <div class="card"><div class="rank" id="fnRank"></div></div>
+    <div class="card bet" id="fnBet" hidden></div>
+    <button class="main" id="btAgain">Jogar de novo</button>
+    <p class="note center" id="fnWait" hidden>Esperando quem criou a sala chamar a revanche…</p>
+    <button class="ghost" id="btFinalExit">Voltar ao menu</button>
+  </div>
+</section>
+
+<!-- SOLO: fase concluída -->
+<section class="screen over" id="scrSoloDone" hidden>
+  <div class="wrap">
+    <h3 class="center" id="sdLevel">Fase 1</h3>
+    <div class="winner">ESCAPOU!</div>
+    <div class="card"><div class="rank" id="sdStats"></div></div>
+    <button class="main" id="btNext">Próxima fase</button>
+    <button class="ghost" id="btSoloMenu">Menu</button>
+  </div>
+</section>
+
+<!-- PRÊMIO -->
+<section class="screen over" id="scrPrize" hidden>
+  <div class="wrap">
+    <h3 class="center">Desafio Pixel Lab</h3>
+    <div class="winner">VOCÊ ZEROU AS 100 FASES!</div>
+    <div class="card prize">
+      <div class="prizeval">R$ 50</div>
+      <p class="note center">Você ganhou o desafio! Mande a mensagem para o criador do jogo no WhatsApp para receber o prêmio.</p>
+    </div>
+    <div class="card"><div class="rank" id="pzStats"></div></div>
+    <label class="f">Seu nome (vai na mensagem)<input id="pzName" maxlength="30" autocomplete="name"></label>
+    <a class="btn main" id="pzWa" href="#" target="_blank" rel="noopener noreferrer">Resgatar no WhatsApp</a>
+    <p class="note">Número: <b>(98) 97005-0096</b>. Se o WhatsApp não abrir, mande seu nome e o código <b id="pzCode2">----</b> para esse número.</p>
+    <details class="card"><summary>Regras do desafio</summary>
+      <ul class="rules">
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 80% dos pontinhos</b>, a partir da versão 1.5.</li>
+          <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
+          <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
+          <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
+        </ul>
+    </details>
+    <button class="ghost" id="btPrizeBack">Voltar ao menu</button>
+  </div>
+</section>
+
+<!-- PAUSA -->
+<section class="screen over" id="scrPause" hidden>
+  <div class="wrap">
+    <h2 class="center">Pausa</h2>
+    <p class="note center" id="psNote"></p>
+    <button class="main" id="btResume">Continuar</button>
+    <button id="btPauseSettings">Configurações</button>
+    <button id="btQuit">Sair da partida</button>
+  </div>
+</section>
+
+<!-- CONECTANDO -->
+<section class="screen over" id="scrWait" hidden>
+  <div class="wrap center">
+    <h2 id="wtTitle">Conectando…</h2>
+    <p class="note" id="wtNote">Isso leva poucos segundos.</p>
+    <button class="ghost" id="btWaitCancel">Cancelar</button>
+  </div>
+</section>
+
+<div id="stick" hidden aria-hidden="true"><i></i></div>
+<div id="toast" hidden></div>
+
+<script src="peerjs.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
