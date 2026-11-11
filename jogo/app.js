@@ -174,7 +174,7 @@ const WORLDS = [
   { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Bombas, e tudo junto mais rápido' },
   { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Labirintos maiores, com tudo junto' },
   { name:'Pântano',            wall:'#4f6b2a', hi:'#a8d45a', lo:'#24331a', floor:'#0b110a', speck:'#1c2a14', news:'Lama que te deixa lento e cola que te prende' },
-  { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lama, cola e bombas juntas' },
+  { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lança-chamas' },
   { name:'Laboratório',        wall:'#8f88b0', hi:'#ffffff', lo:'#4a4468', floor:'#13111d', speck:'#24203a', news:'Portais e setas por todo lado' },
   { name:'Tempestade',         wall:'#3c4a6e', hi:'#ffe066', lo:'#1a2238', floor:'#080a14', speck:'#1a2036', news:'O desafio final: todos os perigos juntos' },
 ];
@@ -373,7 +373,7 @@ function genLevel(idx, seed){
     const nRs = idx < 21 ? 0 : Math.min(2 + Math.floor((idx - 21) / 2), 10);
     const nDr = idx < 24 ? 0 : Math.min(1 + Math.floor((idx - 24) / 2), 8);
     // lança-chamas (a partir da fase 71): bocal na parede solta fogo por até 3 casas
-    const nFl = 0; // v3.3: lança-chamas removido (difícil demais)
+    const nFl = idx < 71 ? 0 : Math.min(1 + Math.floor((idx - 71) / 2), 8);
     const sx0 = start % w, sy0 = (start / w) | 0;
     const flameOk = tt => an.trav.has(tt) && !special(tt) && !used[tt] && Math.abs(tt % w - sx0) + Math.abs(((tt / w) | 0) - sy0) >= 4;
     for (const t of shuffle([...an.trav.keys()], R)){
@@ -427,7 +427,7 @@ function genLevel(idx, seed){
       used[t] = 1;
       L.bombs.push({ t, x: bx, y: by, period: 3 + R() * 1.4, phase: R() * 4 });
     }
-    // v3.3: maré de plasma, fantasma caçador, vento assombrado e raios foram removidos (difíceis demais)
+    // v3.3: maré de plasma, fantasma caçador, vento assombrado e raios foram removidos (difíceis demais); ficam 10 perigos
     // lama (61+) e poção da confusão (81+): não mudam o caminho, só o jeito de andar
     const rest = shuffle([...an.trav.keys()].filter(t => !special(t) && !used[t]), R);
     const nMud = idx < 61 ? 0 : Math.min(4 + (idx - 61), 16), nCf = 0; // v3.3: poção da confusão removida
@@ -1693,6 +1693,7 @@ function buildLegend(){
     [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>7. Bombas</b> (fase 41+). Piscam e explodem em cruz.'],
     [mk(g => g.drawImage(SPR.mud(0), 0, 0)), '<b>8. Lama</b> (fase 61+). Você atravessa bem mais devagar.'],
     [mk(g => g.drawImage(SPR.glue(), 0, 0)), '<b>9. Cola</b> (fase 61+). Te prende na hora: o deslize para ali.'],
+    [mk(g => { g.drawImage(SPR.nozzle(), 0, 0); g.fillStyle = P.orange; g.fillRect(3, 0, 2, 2); }), '<b>10. Lança-chamas</b> (fase 71+). Solta fogo por até 3 casas. Espere apagar para passar.'],
   ];
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const m = /^<b>(.*?)<\/b>\s*(.*)$/.exec(html); return [h('img', { src, alt: '' }), h('span', null, h('b', null, m ? m[1] : ''), m ? ' ' + m[2] : html)]; }));
 }
