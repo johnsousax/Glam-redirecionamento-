@@ -170,13 +170,13 @@ const WORLDS = [
   { name:'Porão',              wall:'#8b4a2b', hi:'#d08a4a', lo:'#4a2414', floor:'#120c0e', speck:'#2b1a17', news:'Espinhos e setas' },
   { name:'Esgoto',             wall:'#2f7a6a', hi:'#6fd6b0', lo:'#143a33', floor:'#08120f', speck:'#15302a', news:'Lasers e portais' },
   { name:'Caverna de Cristal', wall:'#4b3f8f', hi:'#8af0e6', lo:'#221c4a', floor:'#0d0b1a', speck:'#252047', news:'Espinhos que sobem e esmagadores' },
-  { name:'Fornalha',           wall:'#a3322b', hi:'#ff9a3e', lo:'#4d1412', floor:'#150808', speck:'#351311', news:'A maré de plasma sobe atrás de você' },
+  { name:'Fornalha',           wall:'#a3322b', hi:'#ff9a3e', lo:'#4d1412', floor:'#150808', speck:'#351311', news:'Espinhos que sobem e esmagadores, mais rápidos' },
   { name:'Torre de Gelo',      wall:'#3a6ad6', hi:'#d6ecff', lo:'#1b2f6e', floor:'#090e1e', speck:'#1c2a4c', news:'Bombas, e tudo junto mais rápido' },
-  { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Vento assombrado e o fantasma caçador' },
+  { name:'Mansão Assombrada',  wall:'#3b3550', hi:'#b7a6ff', lo:'#1a1626', floor:'#07060c', speck:'#18142a', news:'Labirintos maiores, com tudo junto' },
   { name:'Pântano',            wall:'#4f6b2a', hi:'#a8d45a', lo:'#24331a', floor:'#0b110a', speck:'#1c2a14', news:'Lama que te deixa lento e cola que te prende' },
-  { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lança-chamas' },
-  { name:'Laboratório',        wall:'#8f88b0', hi:'#ffffff', lo:'#4a4468', floor:'#13111d', speck:'#24203a', news:'Poção da confusão: os controles invertem' },
-  { name:'Tempestade',         wall:'#3c4a6e', hi:'#ffe066', lo:'#1a2238', floor:'#080a14', speck:'#1a2036', news:'Raios, o fantasma volta e tudo junto' },
+  { name:'Fábrica',            wall:'#62606f', hi:'#d0d0dc', lo:'#2c2b36', floor:'#0e0e12', speck:'#202028', news:'Lama, cola e bombas juntas' },
+  { name:'Laboratório',        wall:'#8f88b0', hi:'#ffffff', lo:'#4a4468', floor:'#13111d', speck:'#24203a', news:'Portais e setas por todo lado' },
+  { name:'Tempestade',         wall:'#3c4a6e', hi:'#ffe066', lo:'#1a2238', floor:'#080a14', speck:'#1a2036', news:'O desafio final: todos os perigos juntos' },
 ];
 const worldIdx = idx => Math.floor((idx - 1) / 10) % WORLDS.length;
 
@@ -373,7 +373,7 @@ function genLevel(idx, seed){
     const nRs = idx < 21 ? 0 : Math.min(2 + Math.floor((idx - 21) / 2), 10);
     const nDr = idx < 24 ? 0 : Math.min(1 + Math.floor((idx - 24) / 2), 8);
     // lança-chamas (a partir da fase 71): bocal na parede solta fogo por até 3 casas
-    const nFl = idx < 71 ? 0 : Math.min(1 + Math.floor((idx - 71) / 2), 8);
+    const nFl = 0; // v3.3: lança-chamas removido (difícil demais)
     const sx0 = start % w, sy0 = (start / w) | 0;
     const flameOk = tt => an.trav.has(tt) && !special(tt) && !used[tt] && Math.abs(tt % w - sx0) + Math.abs(((tt / w) | 0) - sy0) >= 4;
     for (const t of shuffle([...an.trav.keys()], R)){
@@ -427,15 +427,10 @@ function genLevel(idx, seed){
       used[t] = 1;
       L.bombs.push({ t, x: bx, y: by, period: 3 + R() * 1.4, phase: R() * 4 });
     }
-    if (idx >= 31 && idx <= 50) L.tideSpeed = 0.22 + Math.min(idx - 31, 30) * 0.009;
-    // fantasma caçador (51-60 e 91-100) e vento assombrado (51-60)
-    if ((idx >= 51 && idx <= 60) || idx >= 91) L.ghost = { sx: 1, sy: 1, speed: 0.8 + Math.min(idx >= 91 ? idx - 91 : idx - 51, 9) * 0.04, delay: 4 };
-    if (idx >= 51 && idx <= 60) L.wind = { every: 6.5 - Math.min(idx - 51, 9) * 0.25, warn: 1.3 };
-    // raios (a partir da fase 91): caem perto de você depois de um aviso
-    if (idx >= 91) L.storm = { every: 3.6 - Math.min(idx - 91, 9) * 0.15, warn: 1.1 };
+    // v3.3: maré de plasma, fantasma caçador, vento assombrado e raios foram removidos (difíceis demais)
     // lama (61+) e poção da confusão (81+): não mudam o caminho, só o jeito de andar
     const rest = shuffle([...an.trav.keys()].filter(t => !special(t) && !used[t]), R);
-    const nMud = idx < 61 ? 0 : Math.min(4 + (idx - 61), 16), nCf = idx < 81 ? 0 : Math.min(2 + Math.floor((idx - 81) / 3), 6);
+    const nMud = idx < 61 ? 0 : Math.min(4 + (idx - 61), 16), nCf = 0; // v3.3: poção da confusão removida
     let mi = 0;
     for (; mi < rest.length && mi < nMud; mi++){ L.mud[rest[mi]] = 1; used[rest[mi]] = 1; }
     for (let k = 0; k < nCf && mi < rest.length; k++, mi++){ L.conf[rest[mi]] = 1; used[rest[mi]] = 1; }
@@ -746,7 +741,7 @@ class Room {
         this.out(id, { t:'you', id }); this.add(id, m.name); break;
       case 'name': p.name = publicText(m.name, 14) || p.name; this.sync(); break;
       case 'rounds': if (isHost && [3,5,7,10].includes(m.n)){ this.rounds = m.n; this.sync(); } break;
-      case 'kind': if (isHost && this.phase === 'lobby' && (m.k === 'classic' || m.k === 'ultra')){ this.kind = m.k; this.sync(); } break;
+      case 'kind': if (isHost && this.phase === 'lobby' && m.k === 'classic'){ this.kind = m.k; this.sync(); } break;
       case 'bet': {
         const text = publicText(m.text, 120); if (!text || this.phase !== 'lobby') return;
         this.bet = { text, by: id, votes: { [id]: true } }; this.sync(); break; }
@@ -1023,12 +1018,12 @@ function saveCamp(c){ store.set('camp', c); store.set('campSig', campSig(c)); }
 // guarda o melhor resultado da fase: [tempo, voltas ao início, % de pontinhos]
 function recordLevel(n, r){
   if (r.time < 2) return;
-  const c = loadCamp(), old = c.l[n], pct = Math.floor(r.dots / Math.max(1, r.L.totalDots) * 100);
+  const c = loadCamp(), old = c.l[n], pct = Math.floor(r.dots * 100 / Math.max(1, r.L.totalDots));
   const cur = [Math.round(r.time * 10) / 10, r.deaths, pct];
   if (!old || (old[2] || 0) < pct || ((old[2] || 0) === pct && cur[0] < old[0])) c.l[n] = cur;
   saveCamp(c);
 }
-const CHALLENGE_PCT = 90; // a fase conta para o desafio com pelo menos 90% dos pontinhos
+const CHALLENGE_PCT = 80; // a fase conta para o desafio com pelo menos 80% dos pontinhos (o mesmo que abre a porta)
 const perfect = e => !!e && (e[2] || 0) >= CHALLENGE_PCT;
 function campDone(c = loadCamp()){ let k = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (perfect(c.l[i])) k++; return k; }
 function prizeCode(c, name){
@@ -1039,7 +1034,7 @@ function prizeCode(c, name){
 function prizeTotals(c){ let t = 0, d = 0; for (let i = 1; i <= PRIZE_LEVELS; i++) if (c.l[i]){ t += c.l[i][0]; d += c.l[i][1]; } return { t, d }; }
 function updatePrizeLink(){
   const c = loadCamp(), name = clean($('#pzName').value, 30) || myName(), code = prizeCode(c, name), tot = prizeTotals(c);
-  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Lab com pelo menos 90% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
+  const msg = 'Olá, @jonsousax! Zerei as 100 fases do Pixel Lab com pelo menos 80% dos pontinhos e ganhei o desafio de R$ 50! 🏆\n'
     + 'Nome: ' + name + '\nTempo somado: ' + fmtTime(tot.t) + '\nVoltas ao início: ' + tot.d + '\nCódigo: ' + code;
   $('#pzWa').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
   $('#pzCode2').textContent = code;
@@ -1048,15 +1043,15 @@ function showPrize(){
   const c = loadCamp(); if (campDone(c) < PRIZE_LEVELS) return;
   const tot = prizeTotals(c);
   if (!$('#pzName').value) $('#pzName').value = store.get('name', '') || '';
-  $('#pzStats').replaceChildren(statRow('Fases com 90% ou mais', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
+  $('#pzStats').replaceChildren(statRow('Fases com 80% ou mais', PRIZE_LEVELS + ' de ' + PRIZE_LEVELS), statRow('Tempo somado', fmtTime(tot.t)), statRow('Voltas pro início', String(tot.d)));
   updatePrizeLink(); sfx('win');
   show('scrPrize');
 }
 function refreshPrize(){
   const k = campDone();
   $('#pzBar').style.width = (k / PRIZE_LEVELS * 100) + '%'; $('#pzBarBox').setAttribute('aria-valuenow', k);
-  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases com 90% ou mais' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
-  $('#pzShort').textContent = k >= PRIZE_LEVELS ? 'Você zerou! Toque para resgatar o prêmio.' : k ? 'Você já tem ' + k + ' de 100 fases com 90% ou mais. Toque para ver.' : 'Zere as 100 fases com pelo menos 90% dos pontinhos e ganhe R$ 50. Toque para ver.';
+  $('#pzProg').textContent = k + ' de ' + PRIZE_LEVELS + ' fases com 80% ou mais' + (k >= PRIZE_LEVELS ? '. Você ganhou!' : '');
+  $('#pzShort').textContent = k >= PRIZE_LEVELS ? 'Você zerou! Toque para resgatar o prêmio.' : k ? 'Você já tem ' + k + ' de 100 fases com 80% ou mais. Toque para ver.' : 'Zere as 100 fases com pelo menos 80% dos pontinhos e ganhe R$ 50. Toque para ver.';
   $('#btClaim').hidden = k < PRIZE_LEVELS;
 }
 function onRunnerFinish(r){
@@ -1080,7 +1075,7 @@ function onRunnerFinish(r){
     store.set('soloMax', Math.max(soloMax(), game.soloLevel + 1));
     recordLevel(game.soloLevel, r);
     rankSync(true); cloudBackup(true);
-    const L = game.level, pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
+    const L = game.level, pct = Math.floor(r.dots * 100 / Math.max(1, L.totalDots));
     setTimeout(() => {
       if (game.mode !== 'solo') return;
       game.phase = 'solodone';
@@ -1088,7 +1083,7 @@ function onRunnerFinish(r){
       $('#sdLevel').textContent = 'Fase ' + game.soloLevel;
       $('#sdStats').replaceChildren(
         statRow('Tempo', fmtTime(r.time)), statRow('Pontinhos', r.dots + ' de ' + L.totalDots + ' (' + pct + '%)'), statRow('Voltas pro início', String(r.deaths)),
-        h('p', { class:'note' }, pct >= CHALLENGE_PCT ? 'Esta fase já conta para o Desafio R$ 50.' : 'Para esta fase contar no Desafio R$ 50, termine com pelo menos 90% dos pontinhos.'));
+        h('p', { class:'note' }, pct >= CHALLENGE_PCT ? 'Esta fase já conta para o Desafio R$ 50.' : 'Para esta fase contar no Desafio R$ 50, termine com pelo menos 80% dos pontinhos.'));
       show('scrSoloDone');
     }, 900);
     return;
@@ -1451,7 +1446,7 @@ function drawHUD(vp){
   else drawText(g, '•' + r.dots + '/' + L.totalDots, 14, top + 11, P.gold);
   if (L.ultra){ if (game.runners.length > 1) drawText(g, shortName(r.name), vp.w - 14, top + 11, P.gray, 1, 'right'); }
   else if (game.mode === 'solo'){
-    const pct = Math.floor(r.dots / Math.max(1, L.totalDots) * 100);
+    const pct = Math.floor(r.dots * 100 / Math.max(1, L.totalDots));
     drawText(g, pct + '%', vp.w - 14, top + 11, pct >= 100 ? '#ffffff' : pct >= 80 ? P.lime : P.pink, 1, 'right');
   } else drawText(g, game.runners.length > 1 ? shortName(r.name) : T.name.split(' ')[0], vp.w - 14, top + 11, P.gray, 1, 'right');
   const cx = Math.round(vp.w / 2), cy = Math.round(vp.h * .4);
@@ -1687,7 +1682,7 @@ function buildLegend(){
   const mk = draw => { const c = document.createElement('canvas'); c.width = 8; c.height = 8; draw(c.getContext('2d')); return c.toDataURL(); };
   const items = [
     [mk(g => g.drawImage(playerSpr(P.orange, 1, false), 0, 0)), '<b>Você.</b> Desliza até bater na parede.'],
-    [mk(g => { g.fillStyle = P.cream; g.fillRect(3, 3, 2, 2); }), '<b>Pontinhos.</b> Pegue 80% para abrir a porta. Com 90% a fase vale para o desafio.'],
+    [mk(g => { g.fillStyle = P.cream; g.fillRect(3, 3, 2, 2); }), '<b>Pontinhos.</b> Pegue 80% para abrir a porta e a fase já vale para o desafio.'],
     [mk(g => g.drawImage(SPR.door(0), 0, 0)), '<b>Porta dourada.</b> A saída. Com cadeado, ainda faltam pontinhos.'],
     [mk(g => g.drawImage(SPR.spikes(), 0, 0)), '<b>1. Espinhos</b> (fase 2+). Tocou, volta pro início.'],
     [mk(g => g.drawImage(SPR.arrow(1, 1), 0, 0)), '<b>2. Setas</b> (fase 6+). Mudam sua direção no meio do caminho.'],
@@ -1695,15 +1690,9 @@ function buildLegend(){
     [mk(g => g.drawImage(SPR.tele(0, 0), 0, 0)), '<b>4. Portais</b> (fase 13+). Te levam para o outro portal da mesma cor, e você para em cima dele.'],
     [mk(g => g.drawImage(SPR.rsUp(), 0, 0)), '<b>5. Espinhos que sobem</b> (fase 21+). Fique de olho no ritmo.'],
     [mk(g => g.drawImage(SPR.crusher(), 0, 0)), '<b>6. Esmagadores</b> (fase 24+). Saem da parede e voltam.'],
-    [mk(g => { g.fillStyle = '#ffd1e3'; g.fillRect(0, 2, 8, 1); g.fillStyle = P.pink; g.fillRect(0, 3, 8, 2); g.fillStyle = '#b02a6b'; g.fillRect(0, 5, 8, 3); }), '<b>7. Maré de plasma</b> (fases 31 a 50). Sobe atrás de você.'],
-    [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>8. Bombas</b> (fase 41+). Piscam e explodem em cruz.'],
-    [mk(g => g.drawImage(SPR.ghost(0), 0, 0)), '<b>9. Fantasma</b> (fases 51 a 60 e 91+). Atravessa paredes e vem atrás de você.'],
-    [mk(g => { g.fillStyle = '#d9d0ff'; g.fillRect(0, 1, 5, 1); g.fillRect(2, 3, 6, 1); g.fillRect(0, 5, 4, 1); g.fillRect(3, 7, 5, 1); }), '<b>10. Vento assombrado</b> (fases 51 a 60). Avisa a direção e te empurra se você estiver parado.'],
-    [mk(g => g.drawImage(SPR.mud(0), 0, 0)), '<b>11. Lama</b> (fase 61+). Você atravessa bem mais devagar.'],
-    [mk(g => g.drawImage(SPR.glue(), 0, 0)), '<b>12. Cola</b> (fase 61+). Te prende na hora: o deslize para ali.'],
-    [mk(g => { g.drawImage(SPR.nozzle(), 0, 0); g.fillStyle = P.orange; g.fillRect(3, 0, 2, 2); }), '<b>13. Lança-chamas</b> (fase 71+). Solta fogo por até 3 casas.'],
-    [mk(g => g.drawImage(SPR.conf(0), 0, 0)), '<b>14. Poção da confusão</b> (fase 81+). Inverte os controles por 6 segundos.'],
-    [mk(g => { g.fillStyle = P.gold; g.fillRect(0, 0, 8, 1); g.fillRect(0, 7, 8, 1); g.fillRect(0, 0, 1, 8); g.fillRect(7, 0, 1, 8); g.fillStyle = '#fff6b0'; g.fillRect(4, 1, 1, 3); g.fillRect(3, 3, 1, 3); }), '<b>15. Raios</b> (fase 91+). A casa pisca e o raio cai. Saia de lá!'],
+    [mk(g => g.drawImage(SPR.bomb(1), 0, 0)), '<b>7. Bombas</b> (fase 41+). Piscam e explodem em cruz.'],
+    [mk(g => g.drawImage(SPR.mud(0), 0, 0)), '<b>8. Lama</b> (fase 61+). Você atravessa bem mais devagar.'],
+    [mk(g => g.drawImage(SPR.glue(), 0, 0)), '<b>9. Cola</b> (fase 61+). Te prende na hora: o deslize para ali.'],
   ];
   $('#legend').replaceChildren(...items.flatMap(([src, html]) => { const m = /^<b>(.*?)<\/b>\s*(.*)$/.exec(html); return [h('img', { src, alt: '' }), h('span', null, h('b', null, m ? m[1] : ''), m ? ' ' + m[2] : html)]; }));
 }
@@ -1822,7 +1811,6 @@ function boardRow(r, mine){
   const pos = Number.isInteger(r.pos) ? r.pos : null;
   const sub = [r.levels_done + (r.levels_done === 1 ? ' concluída' : ' concluídas')];
   if (r.challenge_levels) sub.push(r.challenge_levels + ' no desafio');
-  if (r.ultra_done) sub.push(r.ultra_done + ' ultra');
   return h('div', { class: 'rrow' + (pos && pos <= 3 ? ' top t' + pos : '') + (mine ? ' me' : ''), style: '--d:' + Math.min(20, (pos || 1) - 1) * 0.03 + 's' },
     h('span', { class: 'pos' }, pos ? pos + 'º' : '-'),
     h('span', { class: 'nm' }, String(r.name || ''), r.won ? h('span', { class: 'pill yes' }, 'R$ 50') : null),
@@ -1896,8 +1884,17 @@ const fmtCode = c => c.slice(0, 4) + '-' + c.slice(4);
 const normCode = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 // cópia do progresso na nuvem, ligada ao código de recuperação
 const SAVE_KEYS = ['soloMax', 'soloLast', 'ultraMax', 'ultraBest', 'camp', 'name', 'prizeSeen'];
+// correção vinda do servidor (feita pelo dono do jogo): substitui o progresso do aparelho uma vez
+function applyForce(d){
+  const f = d && d.force; if (!f || typeof f.t !== 'string' || store.get('forced', '') === f.t) return;
+  store.set('soloMax', Math.max(1, posInt(d.soloMax, 1000) || 1)); store.set('soloLast', Math.min(soloMax(), store.get('soloLast', 1)));
+  const c = { v: 1, l: {} };
+  if (d.camp && d.camp.l && typeof d.camp.l === 'object') for (const k in d.camp.l){ const e = d.camp.l[k]; if (posInt(+k, 1000) && Array.isArray(e) && e.length >= 3) c.l[+k] = [+e[0] || 0, Math.max(0, e[1] | 0), Math.min(100, Math.max(0, e[2] | 0))]; }
+  saveCamp(c); store.set('prizeSeen', !!d.prizeSeen); store.set('forced', f.t); store.set('rankPos', null);
+}
 function saveSnapshot(){
   const d = { v: 1 }; for (const k of SAVE_KEYS){ const v = store.get(k, null); if (v != null) d[k] = v; }
+  if (store.get('forced', '')) d.forced = store.get('forced', '');
   d.camp = loadCamp(); return d;
 }
 let lastBackup = 0, backupBusy = false;
@@ -1905,7 +1902,7 @@ let lastBackup = 0, backupBusy = false;
 let pulled = null;
 function pullOnce(){
   return pulled || (pulled = rankCall({ device: deviceId(), action: 'restore' }).then(r => {
-    if (r.ok && r.data && r.data.data){ const before = soloMax(); mergeSave(r.data.data); if (soloMax() !== before && !$('#scrMenu').hidden) refreshMenu(); if (!$('#inName').value) $('#inName').value = store.get('name', ''); }
+    if (r.ok && r.data && r.data.data){ const before = soloMax(); applyForce(r.data.data); mergeSave(r.data.data); if (soloMax() !== before && !$('#scrMenu').hidden) refreshMenu(); if (!$('#inName').value) $('#inName').value = store.get('name', ''); }
     else if (r.status !== 404) pulled = null; // sem internet: tenta de novo na próxima vez
   }));
 }

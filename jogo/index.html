@@ -235,7 +235,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <p class="tag sub8">Labirinto de pixel 8-bit</p>
     <button class="main press" id="btPlay">Iniciar jogo</button>
     <a class="by" href="https://www.instagram.com/jonsousax/" target="_blank" rel="noopener noreferrer">Criado por @Jonsousax</a>
-    <p class="ver">Pixel Lab v3.2</p>
+    <p class="ver">Pixel Lab v3.3</p>
     <a class="mini" href="politica-de-privacidade.html">Política de privacidade</a>
   </div>
 </section>
@@ -260,15 +260,15 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <h1 class="logo">PIXEL<br><span>LAB</span></h1>
     <div class="card prize" id="prizeCard">
       <button class="prizeHead" id="pzToggle" aria-expanded="false" aria-controls="pzBody"><span>Desafio R$ 50</span><span class="chev" aria-hidden="true">▼</span></button>
-      <p class="note" id="pzShort">Zere as 100 fases com pelo menos 90% dos pontinhos e ganhe R$ 50. Toque para ver.</p>
+      <p class="note" id="pzShort">Zere as 100 fases com pelo menos 80% dos pontinhos e ganhe R$ 50. Toque para ver.</p>
       <div id="pzBody" class="pzbody" hidden>
-        <p class="note">Termine as <b>100 fases</b> no modo sozinho pegando <b>pelo menos 90% dos pontinhos</b> de cada uma e ganhe <b>R$ 50 no Pix</b>.</p>
-        <div class="bar" role="progressbar" aria-label="Fases com 90% ou mais" aria-valuemin="0" aria-valuemax="100" id="pzBarBox"><i id="pzBar"></i></div>
-        <p class="note" id="pzProg">0 de 100 fases com 90% ou mais</p>
+        <p class="note">Termine as <b>100 fases</b> no modo sozinho pegando <b>pelo menos 80% dos pontinhos</b> de cada uma e ganhe <b>R$ 50 no Pix</b>.</p>
+        <div class="bar" role="progressbar" aria-label="Fases com 80% ou mais" aria-valuemin="0" aria-valuemax="100" id="pzBarBox"><i id="pzBar"></i></div>
+        <p class="note" id="pzProg">0 de 100 fases com 80% ou mais</p>
         <button class="main" id="btClaim" hidden>Resgatar prêmio</button>
         <h3>Regras</h3>
         <ul class="rules">
-          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 90% dos pontinhos</b>, a partir da versão 1.5.</li>
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 80% dos pontinhos</b>, a partir da versão 1.5.</li>
           <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
           <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
           <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
@@ -283,7 +283,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
       <button class="main" id="btRankAll">Ver ranking completo</button>
     </div>
     <button class="big main" id="btSolo">Jogar sozinho<small id="soloSub">Fase 1</small></button>
-    <button class="big ultra" id="btUltra">Ultra Labirinto<small>Labirinto gigante, inteiro na tela</small></button>
+    <button class="big ultra" id="btUltra" hidden>Ultra Labirinto<small>Labirinto gigante, inteiro na tela</small></button>
     <button class="big hot" id="btCreate">Criar sala online<small>Cada um no seu celular, até 6 pessoas</small></button>
     <div class="card">
       <h3>Entrar numa sala</h3>
@@ -298,7 +298,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
       <p class="note" id="appIos" hidden>No iPhone não existe APK. Para ter o jogo na tela inicial, toque em <b>Compartilhar</b> no Safari e depois em <b>Adicionar à Tela de Início</b>.</p>
     </div>
     <button class="big gear" id="btSettings">Configurações<small>Nome, som, controle e salvar progresso</small></button>
-    <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 15 perigos</small></button>
+    <button class="big teal" id="btHow">Como jogar<small>Controles, regras e os 9 perigos</small></button>
     <button class="ghost" id="btToTitle">Tela inicial</button>
   </div>
 </section>
@@ -308,10 +308,9 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
   <div class="wrap">
     <h2>Como jogar</h2>
     <div class="card"><h3>Controles</h3><p class="note">Deslize o dedo para cima, para baixo, para a esquerda ou para a direita. O bonequinho dispara e só para quando bate numa parede. No computador, use as setas do teclado. Prefere um controle de videogame? Em <b>Configurações</b>, escolha <b>Bolinha</b>: arraste a bolinha para onde quer ir.</p></div>
-    <div class="card"><h3>Objetivo</h3><p class="note">Ache a <b>porta dourada</b> no alto do labirinto. No modo sozinho, a porta fica <b>trancada até você pegar 80% dos pontinhos</b>; o canto de cima da tela mostra quanto você já pegou. Pegando <b>90% ou mais</b>, a fase conta para o Desafio R$ 50. Todas as fases têm saída e deixam chegar em qualquer canto sem precisar recomeçar.</p></div>
+    <div class="card"><h3>Objetivo</h3><p class="note">Ache a <b>porta dourada</b> no alto do labirinto. No modo sozinho, a porta fica <b>trancada até você pegar 80% dos pontinhos</b>; o canto de cima da tela mostra quanto você já pegou. Pegando <b>80% ou mais</b>, a fase conta para o Desafio R$ 50. Todas as fases têm saída e deixam chegar em qualquer canto sem precisar recomeçar.</p></div>
     <div class="card"><h3>Botões</h3><p class="note">O botão de pausa fica no canto de cima à esquerda. O botão de recomeçar (à direita) te leva de volta para o início da fase, e os pontinhos que você já pegou continuam valendo.</p></div>
-    <div class="card"><h3>Os 15 perigos</h3><div class="how" id="legend"></div></div>
-    <div class="card"><h3>Ultra Labirinto</h3><p class="note">Um labirinto gigante, inteiro na tela, com o bonequinho pequeno. O deslize para em cada cruzamento, e o rastro mostra por onde você já passou. São 10 fases, e dá para jogar com amigos escolhendo <b>Ultra</b> na sala.</p></div>
+    <div class="card"><h3>Os 9 perigos</h3><div class="how" id="legend"></div></div>
     <div class="card"><h3>Jogar com amigos</h3><p class="note"><b>Sala online:</b> crie a sala e mande o convite pelo WhatsApp. Com 2 jogadores, ganha quem chegar primeiro; com 3 ou mais, a rodada acaba quando o penúltimo chega. Cada rodada tem tempo máximo e, se ninguém chegar, ela não conta.</p></div>
     <button class="ghost" data-back>Voltar</button>
   </div>
@@ -382,7 +381,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
 <section class="screen" id="scrSolo" hidden>
   <div class="wrap">
     <h2>Escolha a fase</h2>
-    <p class="note">São 10 mundos com 10 fases cada. Cada mundo traz perigos novos. Pegue pelo menos 80% dos pontinhos para a porta abrir e liberar a próxima fase. Fases verdes já valem para o desafio (90% ou mais).</p>
+    <p class="note">São 10 mundos com 10 fases cada. Cada mundo traz perigos novos. Pegue pelo menos 80% dos pontinhos para a porta abrir e liberar a próxima fase. Fases verdes já valem para o desafio (80% ou mais).</p>
     <div id="worlds" style="display:flex;flex-direction:column;gap:16px"></div>
     <button class="ghost" data-back>Voltar</button>
   </div>
@@ -401,7 +400,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
       <h3>Jogadores</h3>
       <div class="players" id="lbPlayers"></div>
     </div>
-    <div class="card" id="kindCard">
+    <div class="card" id="kindCard" hidden>
       <h3>Modo</h3>
       <div class="seg" id="segKind"><button data-k="classic">Clássico</button><button data-k="ultra">Ultra</button></div>
       <p class="note">Clássico: as fases com perigos. Ultra: labirinto gigante inteiro na tela, quem achar a saída primeiro vence.</p>
@@ -467,7 +466,7 @@ input.shake{animation:shake .4s steps(6);border-color:var(--pink)}
     <p class="note">Número: <b>(98) 97005-0096</b>. Se o WhatsApp não abrir, mande seu nome e o código <b id="pzCode2">----</b> para esse número.</p>
     <details class="card"><summary>Regras do desafio</summary>
       <ul class="rules">
-          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 90% dos pontinhos</b>, a partir da versão 1.5.</li>
+          <li>Vale só o modo <b>Jogar sozinho</b>: as 100 fases terminadas no mesmo aparelho, <b>cada uma com pelo menos 80% dos pontinhos</b>, a partir da versão 1.5.</li>
           <li>Um prêmio por pessoa (mesmo WhatsApp e mesma chave Pix).</li>
           <li>O pagamento é feito por Pix depois da conferência. Pode ser pedido um vídeo da tela jogando.</li>
           <li>Desafio oferecido por @jonsousax. Pode ser encerrado a qualquer momento, com aviso no Instagram. Não tem relação com Google, Apple ou WhatsApp.</li>
