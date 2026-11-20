@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Pixel Lab",
+  "short_name": "Pixel Lab",
+  "description": "Pixel Lab: labirinto de pixel 8-bit. Deslize, desvie dos perigos e chegue antes dos amigos.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#0d0b1a",
+  "theme_color": "#0d0b1a",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/tela-1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Mundo 1: Porão" },
+    { "src": "/screenshots/tela-2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Mundo 2: Esgoto" }
+  ]
+}
